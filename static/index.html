@@ -224,14 +224,23 @@
       </div>
 
       <!-- Aksiyonlar -->
-      <div class="mt-4 grid grid-cols-2 gap-2.5">
-        <button id="shareBtn" type="button" class="flex items-center justify-center gap-2 rounded-lg border border-line bg-card py-2.5 text-[13px] font-semibold text-ink transition hover:border-ink">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8.7 13.5l6.6 3.8M15.3 6.7L8.7 10.5M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zm12 7a3 3 0 100-6 3 3 0 000 6z" />
-          </svg>
-          Paylaş
-        </button>
-        <button id="downloadBtn" type="button" class="flex items-center justify-center gap-2 rounded-lg bg-ink py-2.5 text-[13px] font-semibold text-paper transition hover:opacity-90">
+      <div class="mt-4 space-y-2.5">
+        <div class="grid grid-cols-2 gap-2.5">
+          <button id="shareBtn" type="button" class="flex items-center justify-center gap-2 rounded-lg border border-line bg-card py-2.5 text-[13px] font-semibold text-ink transition hover:border-ink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M8.7 13.5l6.6 3.8M15.3 6.7L8.7 10.5M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zm12 7a3 3 0 100-6 3 3 0 000 6z" />
+            </svg>
+            Paylaş
+          </button>
+          <button id="copyBtn" type="button" class="flex items-center justify-center gap-2 rounded-lg border border-line bg-card py-2.5 text-[13px] font-semibold text-ink transition hover:border-ink">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+              <rect x="9" y="9" width="11" height="11" rx="2" />
+              <path stroke-linecap="round" stroke-linejoin="round" d="M5 15V5a2 2 0 012-2h10" />
+            </svg>
+            Görseli kopyala
+          </button>
+        </div>
+        <button id="downloadBtn" type="button" class="flex w-full items-center justify-center gap-2 rounded-lg bg-ink py-2.5 text-[13px] font-semibold text-paper transition hover:opacity-90">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
             <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" />
           </svg>

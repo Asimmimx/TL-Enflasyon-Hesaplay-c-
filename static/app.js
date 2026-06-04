@@ -186,10 +186,16 @@ function renderResult(amount, payload, data) {
 
   // Birim bazında karşılaştırmalar
   const a = data.assets || {};
-  renderAssetChip('usdChip', a.usd);
-  renderAssetChip('eurChip', a.eur);
-  renderAssetChip('goldChip', a.gold);
-  renderMinwageChip(data.minwage, payload);
+  // Açılır bilgi kutusunun ("nasıl hesaplandı?") ihtiyaç duyduğu ortak bağlam.
+  const infoCtx = {
+    startLabel, endLabel,
+    startYear: payload.start_year, endYear: payload.end_year,
+    amount, result: data.result,
+  };
+  renderAssetChip('usdChip', a.usd, infoCtx);
+  renderAssetChip('eurChip', a.eur, infoCtx);
+  renderAssetChip('goldChip', a.gold, infoCtx);
+  renderMinwageChip(data.minwage, payload, infoCtx);
 
   // Uyarı notu
   const notes = ['ENAG ve İTO bağımsız/topluluk kaynaklıdır, resmi değildir.'];
@@ -224,7 +230,7 @@ function renderChartLegend(data) {
   ).join('');
 }
 
-function renderAssetChip(id, asset) {
+function renderAssetChip(id, asset, ctx) {
   const chip = el(id);
   if (!asset) { chip.classList.add('hidden'); return; }
   chip.classList.remove('hidden');
@@ -237,25 +243,156 @@ function renderAssetChip(id, asset) {
        <span class="font-600">${asset.label}</span>
        <span class="font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${pos ? '+' : ''}%${numFormatter.format(asset.change_pct)}</span>
      </div>
-     <div class="mt-0.5 text-[13px] tabular-nums">${fmt(asset.unit_start)} <span class="text-ink-soft">→</span> ${fmt(asset.unit_end)}</div>`;
+     <div class="mt-0.5 pr-7 text-[13px] tabular-nums">${fmt(asset.unit_start)} <span class="text-ink-soft">→</span> ${fmt(asset.unit_end)}</div>` +
+    chipInfoBlock(assetPopHTML(asset, ctx));
 }
 
-function renderMinwageChip(m, payload) {
+function renderMinwageChip(m, payload, ctx) {
   const chip = el('minwageChip');
   if (!m) { chip.classList.add('hidden'); return; }
   chip.classList.remove('hidden');
   const pos = m.change_pct >= 0;
   // O dönemin gerçek net asgari ücretleri (yıl başı). Backend wage_start/wage_end döner.
-  const wageLine = (m.wage_start != null && m.wage_end != null)
-    ? `<div class="mt-0.5 text-[11px] tabular-nums text-ink-soft">${payload.start_year}: ${tlFormatter.format(m.wage_start)} <span>→</span> ${payload.end_year}: ${tlFormatter.format(m.wage_end)} <span class="not-italic">(yıl başı net)</span></div>`
+  const hasWages = m.wage_start != null && m.wage_end != null;
+  const wageLine = hasWages
+    ? `<div class="mt-0.5 pr-7 text-[11px] tabular-nums text-ink-soft">${payload.start_year}: ${tlFormatter.format(m.wage_start)} <span>→</span> ${payload.end_year}: ${tlFormatter.format(m.wage_end)} <span class="not-italic">(yıl başı net)</span></div>`
     : '';
   chip.innerHTML =
     `<div class="flex items-center justify-between text-[12px]">
        <span class="font-600">Asgari ücret</span>
        <span class="font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${pos ? '+' : ''}%${numFormatter.format(m.change_pct)}</span>
      </div>
-     <div class="mt-0.5 text-[13px] tabular-nums">${numFormatter.format(m.ratio_start)} <span class="text-ink-soft">→</span> ${numFormatter.format(m.ratio_end)} maaş</div>
-     ${wageLine}`;
+     <div class="mt-0.5 ${hasWages ? '' : 'pr-7 '}text-[13px] tabular-nums">${numFormatter.format(m.ratio_start)} <span class="text-ink-soft">→</span> ${numFormatter.format(m.ratio_end)} maaş</div>
+     ${wageLine}` +
+    (hasWages ? chipInfoBlock(minwagePopHTML(m, ctx)) : '');
+}
+
+// ---------- Chip "nasıl hesaplandı?" açılır bilgi kutusu ----------
+
+// Daire içinde "i" düğmesi + (gizli) açılır kutu. İçerik popBody'den gelen HTML'dir.
+function chipInfoBlock(bodyHTML) {
+  return (
+    `<button type="button" class="chip-info" aria-label="Nasıl hesaplandı?" aria-expanded="false">` +
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">` +
+    `<circle cx="12" cy="12" r="9" /><path stroke-linecap="round" d="M12 11v5M12 7.5h.01" /></svg>` +
+    `</button>` +
+    `<div class="chip-pop hidden" role="tooltip">${bodyHTML}</div>`
+  );
+}
+
+// Açılır kutunun ortak gövdesi: başlık · ham değer satırları · "kendi enflasyonu" notu ·
+// ayraç · hesaplama cümlesi · iyi/kötü yorumu (artış/azalış rengiyle).
+function popBody(title, rows, noteHTML, calcLine, verdict, pos) {
+  return (
+    `<p class="chip-pop-title">${title}</p>` +
+    `<div class="chip-pop-rows">${rows}</div>` +
+    `<p class="chip-pop-note">${noteHTML}</p>` +
+    `<div class="chip-pop-sep"></div>` +
+    `<p class="chip-pop-calc">${calcLine}</p>` +
+    `<p class="chip-pop-verdict ${pos ? 'text-up' : 'text-down'}">${verdict}</p>`
+  );
+}
+
+// Dolar / Euro / Altın açılır kutusunun içeriği.
+function assetPopHTML(asset, ctx) {
+  const isWeight = asset.kind === 'weight';
+  const rise = (asset.price_end / asset.price_start - 1) * 100;
+  const riseAbs = numFormatter.format(Math.abs(rise));
+  const riseVerb = rise >= 0 ? 'arttı' : 'azaldı';
+  const pos = asset.change_pct >= 0;
+  const pctAbs = numFormatter.format(Math.abs(asset.change_pct));
+  const fmt = isWeight
+    ? (x) => `${numFormatter.format(x)} ${asset.symbol}`
+    : (x) => `${asset.symbol}${numFormatter.format(x)}`;
+
+  const priceLabel = isWeight ? '1 gr altın' : `1 ${asset.symbol}`;
+  const rows =
+    `<div class="chip-pop-row"><span>${ctx.startLabel}</span><span>${priceLabel} = ${tlFormatter.format(asset.price_start)}</span></div>` +
+    `<div class="chip-pop-row"><span>${ctx.endLabel}</span><span>${priceLabel} = ${tlFormatter.format(asset.price_end)}</span></div>`;
+
+  const riseLine = isWeight
+    ? `Gram altın bu dönemde %${riseAbs} ${riseVerb}.`
+    : `${asset.label}/TL bu dönemde %${riseAbs} ${riseVerb} (kur artışı).`;
+
+  // Para biriminin "kendi" enflasyonu (ABD TÜFE / Euro Bölgesi HICP) — backend'den gelirse.
+  let foreignLine = '';
+  if (!isWeight && asset.cpi_change_pct != null) {
+    const c = asset.cpi_change_pct;
+    const cAbs = numFormatter.format(Math.abs(c));
+    if (c >= 0) {
+      const loss = (1 - 1 / (1 + c / 100)) * 100; // birimin kendi alım gücü kaybı
+      foreignLine =
+        `<span class="chip-pop-foreign">${asset.cpi_region}'de fiyatlar bu dönemde ~%${cAbs} arttı; ` +
+        `yani ${asset.label.toLowerCase()} kendi içinde ~%${numFormatter.format(loss)} değer kaybetti (yıllık, yaklaşık).</span>`;
+    } else {
+      foreignLine = `<span class="chip-pop-foreign">${asset.cpi_region}'de fiyatlar bu dönemde ~%${cAbs} azaldı (yıllık, yaklaşık).</span>`;
+    }
+  }
+  const noteHTML = riseLine + foreignLine;
+
+  const calcLine = isWeight
+    ? `${tlFormatter.format(ctx.amount)} o gün ${fmt(asset.unit_start)} altın alırdı; TÜFE'ye göre güncellenen ${tlFormatter.format(ctx.result)} bugün ${fmt(asset.unit_end)} alır.`
+    : `${tlFormatter.format(ctx.amount)} o gün ${fmt(asset.unit_start)} ederdi; TÜFE'ye göre güncellenen ${tlFormatter.format(ctx.result)} bugün ${fmt(asset.unit_end)} eder.`;
+
+  let verdict;
+  if (isWeight) {
+    verdict = pos
+      ? `Altın resmi enflasyonun gerisinde kaldı — aynı parayla %${pctAbs} <b>daha çok</b> altın alıyorsunuz.`
+      : `Altın resmi enflasyonu geçti — aynı parayla %${pctAbs} <b>daha az</b> altın alıyorsunuz.`;
+  } else {
+    verdict = pos
+      ? `Resmi enflasyon ${asset.label} karşısında öne geçti — paranızın ${asset.label} cinsinden alım gücü %${pctAbs} <b>arttı</b>.`
+      : `${asset.label} resmi enflasyonu geçti — paranızın ${asset.label} cinsinden alım gücü %${pctAbs} <b>eridi</b>.`;
+  }
+
+  return popBody(`${asset.label} nasıl hesaplandı?`, rows, noteHTML, calcLine, verdict, pos);
+}
+
+// Asgari ücret açılır kutusunun içeriği.
+function minwagePopHTML(m, ctx) {
+  const rise = (m.wage_end / m.wage_start - 1) * 100;
+  const riseAbs = numFormatter.format(Math.abs(rise));
+  const riseVerb = rise >= 0 ? 'arttı' : 'azaldı';
+  const pos = m.change_pct >= 0;
+  const pctAbs = numFormatter.format(Math.abs(m.change_pct));
+
+  const rows =
+    `<div class="chip-pop-row"><span>${ctx.startYear} net asgari ücret</span><span>${tlFormatter.format(m.wage_start)}</span></div>` +
+    `<div class="chip-pop-row"><span>${ctx.endYear} net asgari ücret</span><span>${tlFormatter.format(m.wage_end)}</span></div>`;
+  const riseLine = `Asgari ücret bu dönemde %${riseAbs} ${riseVerb}.`;
+  const calcLine = `${tlFormatter.format(ctx.amount)}, ${ctx.startYear} yılında ${numFormatter.format(m.ratio_start)} maaş ederdi; TÜFE'ye göre güncellenen ${tlFormatter.format(ctx.result)}, ${ctx.endYear} yılında ${numFormatter.format(m.ratio_end)} maaş eder.`;
+  const verdict = pos
+    ? `Tutarınız daha çok “maaş” ediyor — alım gücünüz asgari ücrete göre %${pctAbs} <b>arttı</b>.`
+    : `Asgari ücret paranızdan hızlı arttı — tutarınız %${pctAbs} <b>daha az “maaş”</b> ediyor.`;
+
+  return popBody('Asgari ücret nasıl hesaplandı?', rows, riseLine, calcLine, verdict, pos);
+}
+
+// Açık tüm bilgi kutularını kapatır.
+function closeAllChipPops() {
+  document.querySelectorAll('.chip-pop:not(.hidden)').forEach((p) => p.classList.add('hidden'));
+  document.querySelectorAll('.chip--open').forEach((c) => c.classList.remove('chip--open'));
+  document.querySelectorAll('.chip-info[aria-expanded="true"]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
+}
+
+// Bir bilgi kutusunu açar ve yatayda görüntü alanı (viewport) içinde kalacak şekilde konumlar.
+function openChipPop(chip, btn) {
+  const pop = chip.querySelector('.chip-pop');
+  if (!pop) return;
+  pop.classList.remove('hidden');
+  chip.classList.add('chip--open');
+  btn.setAttribute('aria-expanded', 'true');
+
+  // Önce sol kenardan ölç, sonra ekranı taşmayacak şekilde sola/sağa kaydır.
+  pop.style.left = '0px';
+  pop.style.right = 'auto';
+  const w = pop.offsetWidth;
+  const chipRect = chip.getBoundingClientRect();
+  const vw = document.documentElement.clientWidth;
+  const margin = 8;
+  let leftVP = chipRect.right - w; // varsayılan: kutunun sağ kenarı chip'in sağına hizalı
+  leftVP = Math.max(margin, Math.min(leftVP, vw - w - margin));
+  pop.style.left = (leftVP - chipRect.left) + 'px';
 }
 
 function drawChart(series) {
@@ -537,6 +674,40 @@ async function shareShareImage(theme = shareTheme) {
   showAlert('Paylaşım bu cihazda desteklenmiyor; görsel indirildi.', 'warning');
 }
 
+// Düğmeye kısa süreli geri bildirim yazısı/işareti gösterir, sonra eski haline döner.
+// (Uyarı kutusu modalın arkasında kaldığı için kopyalama sonucu burada gösterilir.)
+function flashButton(btn, message, ok = true) {
+  if (btn._flashTimer) { clearTimeout(btn._flashTimer); btn.innerHTML = btn._flashOriginal; }
+  btn._flashOriginal = btn.innerHTML;
+  const icon = ok
+    ? `<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />`
+    : `<circle cx="12" cy="12" r="9" /><path stroke-linecap="round" d="M12 8v5M12 16h.01" />`;
+  btn.innerHTML =
+    `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">${icon}</svg> ${message}`;
+  btn._flashTimer = setTimeout(() => {
+    btn.innerHTML = btn._flashOriginal;
+    btn._flashTimer = null;
+  }, 1700);
+}
+
+// Görseli panoya (clipboard) PNG olarak kopyalar. Desteklenmeyen tarayıcılarda indirmeye düşer.
+async function copyShareImage(theme = shareTheme) {
+  const btn = el('copyBtn');
+  const canvas = await buildShareCanvas(theme);
+  if (!canvas) return;
+  const blob = await canvasToBlob(canvas);
+  if (!blob) { flashButton(btn, 'Oluşturulamadı', false); return; }
+  try {
+    if (!(navigator.clipboard && window.ClipboardItem)) throw new Error('clipboard yok');
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+    flashButton(btn, 'Kopyalandı');
+  } catch (err) {
+    // Pano API'si yoksa/engellendiyse görseli indir ve kullanıcıyı bilgilendir.
+    await downloadShareImage(theme);
+    flashButton(btn, 'İndirildi', false);
+  }
+}
+
 // ---------- Paylaşım önizleme modalı ----------
 
 // Seçili temayla görseli çizip <img> önizlemesine ve segment düğmelerine yansıtır.
@@ -601,7 +772,24 @@ document.addEventListener('keydown', (e) => {
 document.querySelectorAll('[data-share-theme]').forEach((b) =>
   b.addEventListener('click', () => { shareTheme = b.dataset.shareTheme; renderSharePreview(); }));
 el('shareBtn').addEventListener('click', () => shareShareImage(shareTheme));
+el('copyBtn').addEventListener('click', () => copyShareImage(shareTheme));
 el('downloadBtn').addEventListener('click', () => downloadShareImage(shareTheme));
+
+// Chip "nasıl hesaplandı?" bilgi kutuları — delegation (chip'ler her hesapla'da yeniden üretilir).
+// "i" düğmesine basınca aç/kapat; başka yere ya da kutu dışına tıklayınca / Escape ile kapat.
+document.addEventListener('click', (e) => {
+  const btn = e.target.closest('.chip-info');
+  if (btn) {
+    const chip = btn.closest('.chip');
+    const isOpen = !chip.querySelector('.chip-pop').classList.contains('hidden');
+    closeAllChipPops();
+    if (!isOpen) openChipPop(chip, btn);
+    return;
+  }
+  if (e.target.closest('.chip-pop')) return; // kutu içine tıklama kapatmasın
+  closeAllChipPops();
+});
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllChipPops(); });
 
 // Site teması değişince (düğme ya da sistem) açıktaki sonucun grafiğini yeniden renklendir.
 const _themeObserver = new MutationObserver(() => {

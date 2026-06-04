@@ -22,9 +22,13 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from . import enag
+from . import foreign_cpi
 from . import ito
 from . import minwage
 from .evds import ASSETS, DataService, EVDSError
+
+# Varlık -> "kendi" enflasyonu bölgesi (yabancı TÜFE). Altın hariç.
+FOREIGN_CPI_REGION = {"usd": "us", "eur": "ea"}
 
 load_dotenv()
 
@@ -201,7 +205,7 @@ async def calculate(req: CalculateRequest):
             continue
         unit_start = req.amount / p_start
         unit_end = result / p_end
-        response["assets"][key] = {
+        entry = {
             "label": meta["label"],
             "symbol": meta["symbol"],
             "kind": meta["kind"],
@@ -211,6 +215,14 @@ async def calculate(req: CalculateRequest):
             "price_end": round(p_end, 4),
             "change_pct": round((unit_end / unit_start - 1) * 100, 2),
         }
+        # Para biriminin "kendi" enflasyonu (ABD TÜFE / Euro Bölgesi HICP) — yıllık, yaklaşık.
+        region = FOREIGN_CPI_REGION.get(key)
+        if region:
+            cpi_chg = foreign_cpi.period_change(region, req.start_year, req.end_year)
+            if cpi_chg is not None:
+                entry["cpi_change_pct"] = round(cpi_chg, 2)
+                entry["cpi_region"] = foreign_cpi.label(region)
+        response["assets"][key] = entry
 
     # Reel enflasyon (ENAG, bağımsız) — yalnızca ENAG'ın kapsadığı dönemler için
     response["enag"] = None

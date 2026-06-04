@@ -26,6 +26,12 @@ Veriler **TCMB EVDS** (Elektronik Veri Dağıtım Sistemi) servisinden, **TÜFE 
 - 📉 **Zaman serisi grafiği:** tutarın değerinin aylar boyunca seyri; TÜFE, ENAG ve İTO çizgileri
   bir arada (hafif, bağımsız SVG — ek bağımlılık yok).
 - 👷 **Asgari ücret karşılaştırması:** "Bu tutar o tarihte kaç net asgari ücretti, bugün kaç?"
+- ℹ️ **"Nasıl hesaplandı?" bilgi kutuları:** her karşılaştırma kartının (Dolar, Euro, Altın,
+  Asgari ücret) sağ alt köşesindeki **ⓘ** düğmesine basınca açılan kutuda; o tarihteki **ham
+  değerler** (ör. *1 $ = ₺1,66 → ₺43,11*), dönemdeki **kur artışı** ve artış/azalışın ne anlama
+  geldiğine dair kısa bir **iyi/kötü yorumu** gösterilir. Dolar ve Euro için ayrıca o para biriminin
+  **kendi enflasyonu** (ABD TÜFE / Euro Bölgesi HICP — yıllık, yaklaşık) eklenir: ör. *"ABD'de
+  fiyatlar bu dönemde ~%75 arttı; yani dolar kendi içinde ~%43 değer kaybetti."*
 - 📊 **Reel enflasyon (ENAG):** bağımsız ENAG verisiyle alternatif sonuç (2020+ dönemleri için —
   ENAG Eylül 2020'de kuruldu —, açıkça "bağımsız/doğrulanmamış" etiketiyle).
 - 🏛️ **İTO karşılaştırması:** İstanbul Ticaret Odası endeksiyle üçüncü bir ölçüm (2003+). Resmi TÜFE'ye
@@ -33,6 +39,8 @@ Veriler **TCMB EVDS** (Elektronik Veri Dağıtım Sistemi) servisinden, **TÜFE 
 - 🟠 Veri olmayan tarihler / hatalı girişler için kibar, renkli uyarılar.
 - 🖼️ **Sonucu paylaş / dışa aktar:** sonucu sosyal medyaya uygun bir görsele (PNG) dönüştürür;
   indirmeden önce **açık/karanlık önizleme** sunar (kişisel ad veya site adresi içermez).
+  Üç seçenek: **Paylaş**, **görseli panoya kopyala** (tek tıkla yapıştırmaya hazır; desteklemeyen
+  tarayıcıda otomatik indirmeye düşer) ve **görseli indir**.
 - 🔄 EVDS'den **otomatik veri çekme + diske önbellekleme** (TTL dolunca yeniler).
 - 🛰️ Python **FastAPI** backend hem API'yi hem de frontend'i tek sunucudan servis eder.
 
@@ -48,6 +56,7 @@ tlenflasyon/
 │   ├── evds.py          # EVDS istemcisi (TÜFE + USD/EUR/altın) + önbellek
 │   ├── enag.py          # ENAG (reel enflasyon) verisi + normalizasyon
 │   ├── ito.py           # İTO endeksi (spread yöntemi)
+│   ├── foreign_cpi.py   # ABD (BLS) + Euro Bölgesi (Eurostat) yıllık enflasyon tablosu
 │   ├── minwage.py       # Net asgari ücret tablosu (yıllara göre)
 │   └── data/
 │       └── ito_data.json  # İTO/TÜİK topluluk verisi (aylık oranlar)
@@ -272,6 +281,16 @@ crontab -e
   eski yıllardaki hata büyük ölçüde düzelir; resmi TÜFE bel kemiği olarak kalır. İTO da bağımsız/
   topluluk kaynaklıdır, resmi rakam değildir. (Not: İTO Ocak 2025'te 2023=100 bazına geçti; oranlar
   baz bağımsız olduğundan hesap etkilenmez.)
+- **Yabancı enflasyon (dolar/euro'nun kendi enflasyonu):** Dolar ve Euro bilgi kutularında, kurun
+  TL karşısındaki artışının (**kur artışı**) yanı sıra o para biriminin **kendi** enflasyonu da
+  gösterilir — ör. *"ABD'de fiyatlar bu dönemde ~%75 arttı; yani dolar kendi içinde ~%43 değer
+  kaybetti."* [`app/foreign_cpi.py`](app/foreign_cpi.py) **resmi yıllık ortalama** oranları tutar:
+  ABD için **BLS** (CPI-U), Euro Bölgesi için **Eurostat** (HICP). Bu veri **yıl bazlıdır** (aylık
+  değil) — bu yüzden arayüzde **"yaklaşık"** etiketlenir; oranlardan 2003=100 bazlı kümülatif endeks
+  kurulur. 2024 ve öncesi tarihsel kesin, **2025** kesinleşmiş yıllık ortalama, **2026 geçicidir**
+  (yıl tamamlanmadığından o yıl yayımlanan en güncel 12 aylık enflasyon: ABD Nis 2026 %3,8 · Euro B.
+  May 2026 %3,2). Veriyi güncellemek için `foreign_cpi.py` içindeki `_RATES` sözlüğüne ekleyin.
+  **Altın** bu hesaba dâhil değildir (gram altının "kendi" enflasyonu kavramı yoktur).
 - **Sağlamlık:** EVDS'ye ulaşılamazsa uygulama, elindeki (bayat olsa bile) önbelleğe düşer
   ve arayüzde uygun uyarı gösterir.
 - **CORS gerekmez:** Frontend ve API aynı sunucudan (aynı origin) servis edildiği için
@@ -298,6 +317,7 @@ crontab -e
 | **ENAG** (Enflasyon Araştırma Grubu) | 2020+ | Bağımsız — topluluk kaynaklı, yıllık orana normalize |
 | **İTO** (İstanbul Ticaret Odası) | 2003+ | Bağımsız — topluluk kaynaklı, spread yöntemiyle |
 | **Net asgari ücret** (`app/minwage.py`) | 2003+ | Kamuya açık yıllık tablo (Ocak değerleri) |
+| **ABD TÜFE** (BLS, CPI-U) · **Euro Bölgesi HICP** (Eurostat) — `app/foreign_cpi.py` | 2003+ | Resmi yıllık ortalama oranlar (elle tutulur, yıl bazlı/yaklaşık) |
 
 ENAG ve İTO için kullanılan aylık veriler topluluk derlemesinden alınmıştır
 ([github.com/muslumyalcin-git/enflasyon-matrix](https://github.com/muslumyalcin-git/enflasyon-matrix));

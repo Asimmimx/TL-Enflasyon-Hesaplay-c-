@@ -65,11 +65,66 @@ body { transition: background-color 0.25s ease, color 0.25s ease; }
 
 /* Karşılaştırma "chip"leri (dolar / euro / altın / asgari ücret) */
 .chip {
+  position: relative; /* .chip-info ve .chip-pop bu kutuya göre konumlanır */
   border: 1px solid rgb(var(--c-line));
   border-radius: 0.5rem;
   padding: 0.45rem 0.65rem;
   background: rgb(var(--c-card) / 0.5);
 }
+/* Açık bilgi kutusu olan chip, komşu chip'lerin üstünde kalsın */
+.chip--open { z-index: 40; }
+
+/* "Nasıl hesaplandı?" düğmesi — chip'in sağ alt köşesinde daire içinde "i" */
+.chip-info {
+  position: absolute;
+  bottom: 0.4rem;
+  right: 0.45rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 1.15rem;
+  width: 1.15rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--c-line));
+  background: rgb(var(--c-card));
+  color: rgb(var(--c-ink-soft));
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.chip-info svg { height: 0.85rem; width: 0.85rem; }
+.chip-info:hover { color: rgb(var(--c-ink)); border-color: rgb(var(--c-ink)); }
+.chip-info:focus-visible { outline: 2px solid rgb(var(--c-ink)); outline-offset: 2px; }
+
+/* Açılır bilgi kutusu (popover) — chip'in üstünde açılır, yatay konumu JS ile sığdırılır */
+.chip-pop {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  z-index: 40;
+  width: 16rem;
+  max-width: calc(100vw - 2.5rem);
+  padding: 0.7rem 0.8rem;
+  background: rgb(var(--c-card));
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 0.6rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.22);
+  font-size: 12px;
+  line-height: 1.45;
+  color: rgb(var(--c-ink));
+  text-align: left;
+  cursor: default;
+}
+.chip-pop.hidden { display: none; }
+.chip-pop-title { font-weight: 700; margin-bottom: 0.4rem; }
+.chip-pop-rows { display: flex; flex-direction: column; gap: 0.15rem; }
+.chip-pop-row { display: flex; justify-content: space-between; gap: 0.6rem; }
+.chip-pop-row > span:first-child { color: rgb(var(--c-ink-soft)); }
+.chip-pop-row > span:last-child { font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.chip-pop-note { margin-top: 0.35rem; color: rgb(var(--c-ink-soft)); }
+.chip-pop-foreign { display: block; margin-top: 0.3rem; }
+.chip-pop-sep { height: 1px; background: rgb(var(--c-line)); margin: 0.55rem 0; }
+.chip-pop-calc { color: rgb(var(--c-ink-soft)); }
+.chip-pop-verdict { margin-top: 0.45rem; font-weight: 600; }
 
 /* Sonuç sayısı "pop" animasyonu */
 @keyframes pop {
