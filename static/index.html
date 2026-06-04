@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TL Enflasyon Hesaplayıcı</title>
+  <meta name="description" content="Türk Lirası'nın geçmişten günümüze alım gücünü TÜFE, ENAG ve İTO verileriyle hesaplayın." />
+
+  <!-- Tema (açık/karanlık) — flash olmaması için Tailwind'den önce yüklenir -->
+  <script src="/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Fraunces', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          // Renkler styles.css'teki CSS değişkenlerinden gelir (açık/karanlık tema).
+          colors: {
+            paper: 'rgb(var(--c-paper) / <alpha-value>)',
+            card: 'rgb(var(--c-card) / <alpha-value>)',
+            ink: 'rgb(var(--c-ink) / <alpha-value>)',
+            'ink-soft': 'rgb(var(--c-ink-soft) / <alpha-value>)',
+            line: 'rgb(var(--c-line) / <alpha-value>)',
+            accent: 'rgb(var(--c-accent) / <alpha-value>)',   // ENAG (reel)
+            ito: 'rgb(var(--c-ito) / <alpha-value>)',          // İTO
+            up: 'rgb(var(--c-up) / <alpha-value>)',
+            down: 'rgb(var(--c-down) / <alpha-value>)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body class="bg-paper font-sans text-ink md:h-screen md:overflow-hidden">
+  <main class="mx-auto flex min-h-screen max-w-5xl flex-col justify-center gap-5 px-5 py-6">
+
+    <!-- Masthead -->
+    <header>
+      <div class="flex items-start justify-between gap-3">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">Türkiye · Enflasyon</p>
+        <button type="button" data-theme-toggle aria-label="Temayı değiştir" title="Açık / karanlık tema" class="theme-toggle -mt-1 shrink-0">
+          <svg class="icon-moon h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" />
+          </svg>
+          <svg class="icon-sun h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <circle cx="12" cy="12" r="4" />
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+          </svg>
+        </button>
+      </div>
+      <h1 class="mt-1.5 font-serif text-[2rem] font-600 leading-[1.05] tracking-tight sm:text-[2.6rem]">
+        TL Enflasyon Hesaplayıcı
+      </h1>
+      <p class="mt-1.5 text-[14px] leading-snug text-ink-soft">
+        Geçmişteki bir tutar bugün ne eder? <em class="font-serif italic">Alım gücünü</em>
+        resmi (TÜFE) ve bağımsız (ENAG, İTO) ölçümlerle yan yana görün.
+      </p>
+    </header>
+
+    <div class="grid gap-5 md:grid-cols-2 md:items-stretch">
+
+      <!-- SOL: Form -->
+      <section class="rounded-xl border border-line bg-card p-5 sm:p-6">
+        <label for="amount" class="block text-[13px] font-semibold">Tutar</label>
+        <div class="mt-2 flex items-center rounded-lg border border-line bg-card focus-within:border-ink focus-within:ring-1 focus-within:ring-ink">
+          <span class="select-none border-r border-line px-4 py-3 text-lg font-medium text-ink-soft">₺</span>
+          <input id="amount" type="text" inputmode="decimal" value="1.000" autocomplete="off"
+            class="w-full bg-transparent px-4 py-3 text-lg font-semibold tabular-nums outline-none placeholder:text-ink-soft/50"
+            placeholder="0" />
+        </div>
+
+        <p class="mt-5 text-[13px] font-semibold">Şu tarihteki:</p>
+        <div class="mt-2 grid grid-cols-2 gap-3">
+          <select id="startMonth" class="field-select"></select>
+          <select id="startYear" class="field-select"></select>
+        </div>
+
+        <div class="my-3.5 flex items-center gap-3 text-ink-soft">
+          <span class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-line bg-card">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 5v14m0 0l-5-5m5 5l5-5" />
+            </svg>
+          </span>
+          <span class="text-[13px]">alım gücünün, şu tarihteki karşılığı:</span>
+          <span class="h-px flex-1 bg-line"></span>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <select id="endMonth" class="field-select"></select>
+          <select id="endYear" class="field-select"></select>
+        </div>
+
+        <button id="calcBtn"
+          class="mt-5 flex w-full items-center justify-center gap-2 rounded-lg bg-ink py-3.5 text-[15px] font-semibold text-paper transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-ink focus:ring-offset-2 focus:ring-offset-card disabled:opacity-55">
+          <span id="calcBtnText">Hesapla</span>
+          <svg id="calcSpinner" class="hidden h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-90" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.4 0 0 5.4 0 12h4z"></path>
+          </svg>
+        </button>
+
+        <div id="alertBox" class="mt-3 hidden items-start gap-2.5 rounded-lg border px-4 py-2.5 text-[13px] leading-snug">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="mt-px h-4 w-4 shrink-0">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v4m0 4h.01M10.3 3.9l-8.5 14.6A2 2 0 003.5 21h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z" />
+          </svg>
+          <span id="alertText"></span>
+        </div>
+      </section>
+
+      <!-- SAĞ: Sonuçlar -->
+      <section class="flex flex-col rounded-xl border border-line bg-card p-5 sm:p-6">
+        <!-- Boş durum -->
+        <div id="emptyState" class="flex flex-1 flex-col items-center justify-center py-8 text-center text-ink-soft">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" class="h-9 w-9 opacity-50">
+            <rect x="4" y="3" width="16" height="18" rx="2" /><path stroke-linecap="round" d="M8 7h8M8 11h2m-2 4h2m2 0h2m-2-4h2" />
+          </svg>
+          <p class="mt-3 text-[13px] leading-relaxed">Tutarı ve tarih aralığını seçip<br /><strong class="text-ink">Hesapla</strong>'ya basın.</p>
+        </div>
+
+        <!-- Sonuç içeriği -->
+        <div id="resultContent" class="hidden">
+          <div class="flex items-start justify-between gap-2">
+            <p id="resultRange" class="text-[12px] font-semibold uppercase tracking-wider text-ink-soft">—</p>
+
+            <!-- Dışa aktar: önizleme modalını açar (paylaş / görseli indir) -->
+            <button id="exportBtn" type="button" aria-haspopup="dialog"
+              class="-mt-0.5 inline-flex shrink-0 items-center gap-1 rounded-md border border-line bg-card px-2 py-1 text-[11px] font-semibold text-ink-soft transition hover:border-ink hover:text-ink focus:outline-none focus:ring-1 focus:ring-ink">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-3.5 w-3.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L8 8m4-4l4 4M5 20h14" />
+              </svg>
+              Dışa aktar
+            </button>
+          </div>
+
+          <div class="mt-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+            <div>
+              <p class="text-[12px] text-ink-soft">Resmi (TÜFE) karşılığı</p>
+              <p id="resultValue" class="font-serif text-[2rem] font-600 leading-none tabular-nums sm:text-[2.4rem]">₺0</p>
+            </div>
+            <p id="resultChange" class="inline-flex items-center gap-1 text-xl font-700 tabular-nums">—</p>
+          </div>
+          <p class="mt-1 text-[11px] text-ink-soft">
+            Çarpan <span id="resultMultiplier" class="font-600 text-ink">0×</span>
+            · endeks <span id="resultIndices" class="font-600 text-ink">—</span>
+          </p>
+
+          <!-- Zaman serisi grafiği -->
+          <div class="mt-3">
+            <div id="chartLegend" class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]"></div>
+            <div id="chart" class="mt-1"></div>
+            <div class="mt-0.5 flex justify-between text-[10px] text-ink-soft">
+              <span id="chartStart"></span><span id="chartEnd"></span>
+            </div>
+          </div>
+
+          <!-- Birim bazında karşılaştırmalar -->
+          <div class="mt-3 grid grid-cols-2 gap-2">
+            <div id="usdChip" class="chip hidden"></div>
+            <div id="eurChip" class="chip hidden"></div>
+            <div id="goldChip" class="chip hidden"></div>
+            <div id="minwageChip" class="chip hidden"></div>
+          </div>
+
+          <p id="caveat" class="mt-3 text-[11px] leading-relaxed text-ink-soft"></p>
+        </div>
+      </section>
+    </div>
+
+    <!-- Footer -->
+    <footer class="space-y-1.5 text-[11px] leading-relaxed text-ink-soft">
+      <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        <a href="/gizlilik.html" class="font-medium text-ink hover:text-accent hover:underline">Gizlilik</a>
+        <span aria-hidden="true" class="text-line">·</span>
+        <a href="/kullanim.html" class="font-medium text-ink hover:text-accent hover:underline">Kullanım</a>
+        <span aria-hidden="true" class="text-line">·</span>
+        <a href="/destek.html" class="font-medium text-ink hover:text-accent hover:underline">Destek Ol</a>
+        <span aria-hidden="true" class="text-line">·</span>
+        <a href="https://github.com/Asimmimx" target="_blank" rel="noopener" class="font-medium text-ink hover:text-accent hover:underline">GitHub</a>
+        <span class="sm:ml-auto">Geliştiren: <strong class="font-600 text-ink">Asım Mirza Çiftler</strong></span>
+      </div>
+      <p>
+        Kaynak: TCMB EVDS — TÜFE (2003=100) ve USD/TL.<span id="footerMeta"></span>
+        ENAG (Eylül 2020'den) ve İTO (2003'ten) bağımsız/topluluk kaynaklıdır, resmi değildir;
+        İTO için resmi TÜFE'ye İTO–TÜİK farkı uygulanır.
+      </p>
+    </footer>
+  </main>
+
+  <!-- Paylaşım / dışa aktarma önizleme modalı -->
+  <div id="shareModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">
+    <div class="modal-card">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="shareModalTitle" class="font-serif text-[1.1rem] font-600 text-ink">Görseli dışa aktar</h2>
+        <button id="shareClose" type="button" aria-label="Kapat" class="rounded-md p-1 text-ink-soft transition hover:text-ink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Görsel teması (açık / karanlık) -->
+      <div class="mt-3 flex items-center justify-between gap-2">
+        <span class="text-[12px] font-semibold text-ink-soft">Görsel teması</span>
+        <div class="seg" role="group" aria-label="Görsel teması">
+          <button type="button" data-share-theme="light">Açık</button>
+          <button type="button" data-share-theme="dark">Karanlık</button>
+        </div>
+      </div>
+
+      <!-- Önizleme -->
+      <div class="mt-3">
+        <img id="sharePreview" class="share-preview-img" alt="Paylaşım görseli önizlemesi" />
+      </div>
+
+      <!-- Aksiyonlar -->
+      <div class="mt-4 grid grid-cols-2 gap-2.5">
+        <button id="shareBtn" type="button" class="flex items-center justify-center gap-2 rounded-lg border border-line bg-card py-2.5 text-[13px] font-semibold text-ink transition hover:border-ink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M8.7 13.5l6.6 3.8M15.3 6.7L8.7 10.5M18 8a3 3 0 100-6 3 3 0 000 6zM6 15a3 3 0 100-6 3 3 0 000 6zm12 7a3 3 0 100-6 3 3 0 000 6z" />
+          </svg>
+          Paylaş
+        </button>
+        <button id="downloadBtn" type="button" class="flex items-center justify-center gap-2 rounded-lg bg-ink py-2.5 text-[13px] font-semibold text-paper transition hover:opacity-90">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="h-4 w-4">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v12m0 0l-4-4m4 4l4-4M5 20h14" />
+          </svg>
+          Görseli indir
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

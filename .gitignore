@@ -1,0 +1,42 @@
+# === Gizli / ortam ===
+# API anahtarınızı asla paylaşmayın! (.env.example paylaşılır, .env paylaşılmaz)
+.env
+.env.local
+*.local
+
+# === Yapay zeka / yerel notlar ===
+CLAUDE.md
+.claude/
+
+# === Python ===
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+
+# === Önbellek ===
+# Veri önbelleği (data_cache.json) depoya GÖMÜLÜR — böylece projeyi klonlayan kişi
+# API anahtarı/eski veri çekmeye gerek kalmadan uygulamayı doğrudan çalıştırabilir.
+# Diğer geçici önbellek dosyaları yok sayılmaya devam eder.
+cache/*
+!cache/data_cache.json
+
+# === Geçici / çalışma dosyaları ===
+_*.png
+_*.json
+_research/
+*.tmp
+
+# === Editör / OS ===
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini

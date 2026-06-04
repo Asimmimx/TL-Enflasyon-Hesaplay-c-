@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kullanım Koşulları — TL Enflasyon Hesaplayıcı</title>
+  <meta name="description" content="TL Enflasyon Hesaplayıcı kullanım koşulları: veri doğruluğu, sorumluluk reddi ve bağlı kuruluş açıklaması." />
+
+  <script src="/theme.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            serif: ['Fraunces', 'Georgia', 'serif'],
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+          },
+          // Renkler styles.css'teki CSS değişkenlerinden gelir (açık/karanlık tema).
+          colors: {
+            paper: 'rgb(var(--c-paper) / <alpha-value>)',
+            card: 'rgb(var(--c-card) / <alpha-value>)',
+            ink: 'rgb(var(--c-ink) / <alpha-value>)',
+            'ink-soft': 'rgb(var(--c-ink-soft) / <alpha-value>)',
+            line: 'rgb(var(--c-line) / <alpha-value>)',
+            accent: 'rgb(var(--c-accent) / <alpha-value>)',
+          },
+        },
+      },
+    };
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+
+<body class="bg-paper font-sans text-ink">
+  <main class="mx-auto max-w-2xl px-5 py-10 sm:py-14">
+    <div class="flex items-center justify-between gap-3">
+      <a href="/" class="inline-flex items-center gap-1.5 text-[13px] font-medium text-ink-soft transition hover:text-accent">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-4 w-4">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+        </svg>
+        Ana sayfa
+      </a>
+      <button type="button" data-theme-toggle aria-label="Temayı değiştir" title="Açık / karanlık tema" class="theme-toggle shrink-0">
+        <svg class="icon-moon h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z" /></svg>
+        <svg class="icon-sun h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="4" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" /></svg>
+      </button>
+    </div>
+
+    <p class="mt-8 text-[11px] font-semibold uppercase tracking-[0.22em] text-accent">Yasal</p>
+    <h1 class="mt-2 font-serif text-[2rem] font-600 leading-tight sm:text-[2.4rem]">Kullanım Koşulları</h1>
+    <p class="mt-2 text-[13px] text-ink-soft">Son güncelleme: 3 Haziran 2026</p>
+
+    <div class="mt-8 space-y-6 text-[14px] leading-relaxed text-ink-soft">
+      <section>
+        <p>
+          TL Enflasyon Hesaplayıcı'yı kullanarak aşağıdaki koşulları kabul etmiş olursunuz. Site,
+          Türk Lirası'nın alım gücünü geçmişten günümüze karşılaştırmak için ücretsiz, bilgilendirme
+          amaçlı bir araçtır.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-serif text-[1.25rem] font-600 text-ink">Veri doğruluğu</h2>
+        <p class="mt-2">
+          Resmi TÜFE ve USD/TL verileri TCMB EVDS sisteminden alınır. ENAG ve İTO ölçümleri ise
+          <strong class="text-ink">resmi değildir</strong>; bağımsız/topluluk kaynaklı olarak derlenmiştir
+          ve yaklaşık değerler içerebilir (ENAG verisi yalnızca Eylül 2020 sonrasını kapsar). Sonuçlar
+          tahmini olup yalnızca bilgilendirme amaçlıdır.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-serif text-[1.25rem] font-600 text-ink">Yatırım tavsiyesi değildir</h2>
+        <p class="mt-2">
+          Bu sitede sunulan hesaplama ve karşılaştırmalar finansal, hukuki veya yatırım tavsiyesi
+          niteliği taşımaz. Mali kararlarınızı vermeden önce yetkin bir uzmana danışın.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-serif text-[1.25rem] font-600 text-ink">Garanti ve sorumluluk reddi</h2>
+        <p class="mt-2">
+          Hizmet “olduğu gibi” sunulur; doğruluk, kesintisizlik veya belirli bir amaca uygunluk
+          konusunda hiçbir garanti verilmez. Sitenin kullanımından veya sonuçlara dayanılarak
+          alınan kararlardan doğabilecek zararlardan geliştirici sorumlu tutulamaz.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-serif text-[1.25rem] font-600 text-ink">Bağlı kuruluş (affiliate) açıklaması</h2>
+        <p class="mt-2">
+          “Destek Ol” bölümündeki Amazon bağlantısı bir bağlı kuruluş (Amazon Associates) bağlantısı
+          olabilir. Bu bağlantı üzerinden yapacağınız alışverişlerde, <strong class="text-ink">size ek
+          bir maliyet olmadan</strong> küçük bir komisyon kazanılabilir. Bu, siteyi ücretsiz tutmaya
+          yardımcı olur.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-serif text-[1.25rem] font-600 text-ink">Fikri mülkiyet</h2>
+        <p class="mt-2">
+          Sitenin tasarımı ve yazılımı geliştiriciye aittir. Resmi veriler ilgili kaynaklarına
+          (örn. TCMB) aittir ve onların kullanım koşullarına tabidir.
+        </p>
+      </section>
+
+      <section>
+        <h2 class="font-serif text-[1.25rem] font-600 text-ink">Değişiklikler ve iletişim</h2>
+        <p class="mt-2">
+          Bu koşullar zaman zaman güncellenebilir. Sorularınız için:
+          <a href="mailto:asimmirzac@gmail.com" class="font-medium text-ink underline decoration-line underline-offset-2 hover:text-accent">asimmirzac@gmail.com</a>
+        </p>
+      </section>
+    </div>
+
+    <footer class="mt-12 border-t border-line pt-5 text-[11px] leading-relaxed text-ink-soft">
+      <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+        <a href="/gizlilik.html" class="font-medium text-ink hover:text-accent hover:underline">Gizlilik</a>
+        <span aria-hidden="true" class="text-line">·</span>
+        <a href="/kullanim.html" class="font-medium text-ink hover:text-accent hover:underline">Kullanım</a>
+        <span aria-hidden="true" class="text-line">·</span>
+        <a href="/destek.html" class="font-medium text-ink hover:text-accent hover:underline">Destek Ol</a>
+        <span aria-hidden="true" class="text-line">·</span>
+        <a href="https://github.com/Asimmimx" target="_blank" rel="noopener" class="font-medium text-ink hover:text-accent hover:underline">GitHub</a>
+        <span class="sm:ml-auto">Geliştiren: <strong class="font-600 text-ink">Asım Mirza Çiftler</strong></span>
+      </div>
+    </footer>
+  </main>
+</body>
+</html>

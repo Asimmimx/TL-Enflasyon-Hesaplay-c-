@@ -1,0 +1,147 @@
+/* Editöryel tema — açık (light) ve karanlık (dark) renk değişkenleri.
+   Renkler "R G B" üçlüsü olarak tutulur; Tailwind config bunları
+   rgb(var(--c-xxx) / <alpha-value>) olarak kullanır (opaklık modifiyeleri çalışsın diye). */
+
+:root {
+  color-scheme: light;
+  --c-paper: 246 244 239;   /* zemin */
+  --c-card: 255 255 255;    /* kart */
+  --c-ink: 28 27 24;        /* ana metin */
+  --c-ink-soft: 92 87 78;   /* ikincil metin */
+  --c-line: 230 225 215;    /* çizgi/kenarlık */
+  --c-accent: 179 64 47;    /* vurgu / ENAG (reel) */
+  --c-ito: 47 111 159;      /* İTO */
+  --c-up: 22 101 52;        /* artış (yeşil) */
+  --c-down: 179 64 47;      /* azalış (kırmızı) */
+  /* dropdown ok ikonu için tema-bağımsız nötr gri */
+  --c-arrow: 144 138 126;
+}
+
+html.dark {
+  color-scheme: dark;
+  --c-paper: 24 23 20;      /* koyu sıcak zemin */
+  --c-card: 37 35 31;       /* zeminden bir tık açık kart */
+  --c-ink: 237 233 225;     /* sıcak kırık beyaz metin */
+  --c-ink-soft: 168 161 149;
+  --c-line: 58 54 48;
+  --c-accent: 226 124 99;   /* dağ koyu zeminde okunaklı terrakota */
+  --c-ito: 110 166 214;
+  --c-up: 110 190 134;
+  --c-down: 226 124 99;
+  --c-arrow: 150 144 132;
+}
+
+html, body { background-color: rgb(var(--c-paper)); }
+body { transition: background-color 0.25s ease, color 0.25s ease; }
+
+/* Tarih seçim kutuları */
+.field-select {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(var(--c-line));
+  background-color: rgb(var(--c-card));
+  padding: 0.85rem 2.4rem 0.85rem 0.95rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: rgb(var(--c-ink));
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, background-color 0.15s;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23908a7e' stroke-width='2'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' d='M19 9l-7 7-7-7'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.85rem center;
+  background-size: 1.05rem;
+}
+.field-select:focus {
+  border-color: rgb(var(--c-ink));
+  box-shadow: 0 0 0 1px rgb(var(--c-ink));
+}
+
+/* Fraunces ağırlık yardımcıları (Tailwind font-600 sınıfı için) */
+.font-600 { font-weight: 600; }
+.font-700 { font-weight: 700; }
+
+/* Karşılaştırma "chip"leri (dolar / euro / altın / asgari ücret) */
+.chip {
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  background: rgb(var(--c-card) / 0.5);
+}
+
+/* Sonuç sayısı "pop" animasyonu */
+@keyframes pop {
+  0%   { transform: scale(0.96); opacity: 0.5; }
+  60%  { transform: scale(1.02); }
+  100% { transform: scale(1); opacity: 1; }
+}
+.animate-pop { animation: pop 0.4s ease-out; }
+
+/* ---------- Tema değiştirme düğmesi (güneş/ay) ---------- */
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 2.25rem;
+  width: 2.25rem;
+  border-radius: 9999px;
+  border: 1px solid rgb(var(--c-line));
+  background: rgb(var(--c-card));
+  color: rgb(var(--c-ink-soft));
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s, background-color 0.15s;
+}
+.theme-toggle:hover { color: rgb(var(--c-ink)); border-color: rgb(var(--c-ink)); }
+.theme-toggle:focus-visible { outline: 2px solid rgb(var(--c-ink)); outline-offset: 2px; }
+/* Açık temada ay (karanlığa geç), karanlık temada güneş (açığa geç) gösterilir */
+.theme-toggle .icon-sun { display: none; }
+.theme-toggle .icon-moon { display: block; }
+html.dark .theme-toggle .icon-sun { display: block; }
+html.dark .theme-toggle .icon-moon { display: none; }
+
+/* ---------- Paylaşım önizleme modalı ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.55);
+}
+.modal-overlay.hidden { display: none; }
+.modal-card {
+  width: 100%;
+  max-width: 26rem;
+  max-height: 92vh;
+  overflow-y: auto;
+  background: rgb(var(--c-card));
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 0.85rem;
+  padding: 1rem;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
+}
+.share-preview-img {
+  width: 100%;
+  height: auto;
+  display: block;
+  border-radius: 0.5rem;
+  border: 1px solid rgb(var(--c-line));
+  background: rgb(var(--c-paper));
+}
+/* Modal içi açık/karanlık seçici (segmented control) */
+.seg { display: inline-flex; border: 1px solid rgb(var(--c-line)); border-radius: 0.5rem; overflow: hidden; }
+.seg button {
+  padding: 0.35rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: rgb(var(--c-ink-soft));
+  background: rgb(var(--c-card));
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+}
+.seg button + button { border-left: 1px solid rgb(var(--c-line)); }
+.seg button.active { background: rgb(var(--c-ink)); color: rgb(var(--c-paper)); }
