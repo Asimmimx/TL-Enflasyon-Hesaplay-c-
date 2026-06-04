@@ -156,7 +156,6 @@ def _read_cache() -> Optional[dict]:
 
 
 def _write_cache(tufe_series: str, series: dict) -> dict:
-    CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
     payload = {
         "fetched_at": time.time(),
         "tufe_series": tufe_series,
@@ -164,8 +163,15 @@ def _write_cache(tufe_series: str, series: dict) -> dict:
         "tufe": series["tufe"],
         "assets": series["assets"],
     }
-    with open(CACHE_FILE, "w", encoding="utf-8") as f:
-        json.dump(payload, f, ensure_ascii=False, indent=2)
+    # Diske yazmayı dene. Salt-okunur dosya sistemlerinde (ör. Vercel gibi serverless
+    # ortamlar) yazma başarısız olabilir; bu durumda taze veriyi yalnızca bellekte
+    # tutup devam ederiz — uygulama çökmemeli.
+    try:
+        CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+    except OSError as exc:
+        print(f"[UYARI] Önbellek diske yazılamadı (salt-okunur olabilir): {exc}")
     return payload
 
 
