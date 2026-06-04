@@ -1,5 +1,8 @@
 # 💸 TL Enflasyon Hesaplayıcı
 
+> 🌐 **Canlı demo:** **[tl-enflasyon-hesaplayici.vercel.app](https://tl-enflasyon-hesaplayici.vercel.app/)**
+> — kurulum gerektirmeden, tarayıcıdan hemen deneyin.
+
 Türk Lirası'nın geçmişten günümüze **alım gücünü** hesaplayan modern bir web uygulaması.
 Veriler **TCMB EVDS** (Elektronik Veri Dağıtım Sistemi) servisinden, **TÜFE Genel Endeks
 (2003=100)** serisi (`TP.FG.J0`) kullanılarak otomatik çekilir ve önbelleğe alınır.
