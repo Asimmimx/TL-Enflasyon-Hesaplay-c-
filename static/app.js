@@ -12,6 +12,30 @@ const numFormatter = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 2 }
 const usdFormatter = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const usd = (v) => '$' + usdFormatter.format(v);
 
+// Yüzde metni. Çok büyük değişimlerde (%1.000+) yüzde okunaksızlaşır; onun yerine
+// "1.234×" biçimi kullanılır — 1970'lerden bugüne gibi dönemlerde tek çare bu.
+function fmtChange(v) {
+  if (v == null) return '—';
+  if (Math.abs(v) >= 900) return `${numFormatter.format(1 + v / 100)}×`;
+  return `%${numFormatter.format(v)}`;
+}
+function fmtChangeSigned(v) {
+  if (v == null) return '—';
+  if (Math.abs(v) >= 900) return `${numFormatter.format(1 + v / 100)}×`;
+  // İşaret yüzde imgesinin önüne gelir: "-%92,17" ("%-92,17" değil).
+  return `${v >= 0 ? '+' : '−'}%${numFormatter.format(Math.abs(v))}`;
+}
+
+// Endeks değerleri 1964'te 0,0000011 gibi çok küçük olabilir; anlamlı basamakları koru.
+const smallNumFormatter = new Intl.NumberFormat('tr-TR', { maximumSignificantDigits: 4 });
+function fmtIndex(v) {
+  if (v == null) return '—';
+  return Math.abs(v) >= 1 ? numFormatter.format(v) : smallNumFormatter.format(v);
+}
+
+// Paradan altı sıfır atılması (1 Ocak 2005): öncesindeki tutarlar "eski TL"dir.
+const REDENOMINATION_YEAR = 2005;
+
 const el = (id) => document.getElementById(id);
 const amountInput = el('amount');
 const startMonth = el('startMonth');
@@ -26,6 +50,10 @@ const alertText = el('alertText');
 const exportBtn = el('exportBtn');
 
 let DATA = { values: {}, byYear: {} };
+
+// Sonuç kartındaki chip düzeni: ilk dört sabit kutu, kalanı "daha fazla" bölümünde.
+const PRIMARY_ASSETS = [['usd', 'usdChip'], ['eur', 'eurChip'], ['gold', 'goldChip']];
+const MORE_ASSETS = ['cgold', 'bist', 'brent'];
 let lastResult = null; // { amount, payload, data } — dışa aktarma için son hesaplama
 let shareTheme = 'light'; // paylaşım görselinin teması (modal içinde seçilir)
 
@@ -83,6 +111,20 @@ function buildSelectors() {
   endYear.value = years[years.length - 1];
   refreshMonths(startMonth, startYear.value, 'first');
   refreshMonths(endMonth, endYear.value, 'last');
+  updateAmountHint();
+}
+
+// 2005'te paradan altı sıfır atıldı. Başlangıç tarihi 2005'ten eskiyse girilen tutar
+// "eski TL" kabul edilir; kullanıcı bunu bilmeli.
+function updateAmountHint() {
+  const year = Number(startYear.value);
+  const isOld = year && year < REDENOMINATION_YEAR;
+  el('amountHint').classList.toggle('hidden', !isOld);
+  if (isOld) {
+    el('amountHint').textContent =
+      `${year} için tutarı o günün parasıyla (eski TL) girin — 2005'te paradan altı sıfır ` +
+      `atıldı, 1.000.000 eski TL = ₺1.`;
+  }
 }
 
 function refreshMonths(monthSel, year, defaultPos) {
@@ -173,10 +215,14 @@ function renderResult(amount, payload, data) {
   const up = data.change_pct >= 0;
   const ce = el('resultChange');
   ce.className = 'inline-flex items-center gap-1 text-xl font-700 tabular-nums ' + (up ? 'text-down' : 'text-up');
-  ce.innerHTML = `<span>${up ? '▲' : '▼'}</span><span>%${numFormatter.format(Math.abs(data.change_pct))}</span>`;
+  ce.innerHTML = `<span>${up ? '▲' : '▼'}</span><span>${fmtChange(Math.abs(data.change_pct))}</span>`;
+
+  // Sonucun para birimi bitiş tarihine göredir; 2005 öncesiyse "eski TL" olduğunu belirt.
+  el('resultLabel').textContent = data.old_lira_end
+    ? 'Resmi (TÜFE) karşılığı — eski TL' : 'Resmi (TÜFE) karşılığı';
 
   el('resultMultiplier').textContent = `${numFormatter.format(data.multiplier)}×`;
-  el('resultIndices').textContent = `${numFormatter.format(data.start_index)} → ${numFormatter.format(data.end_index)}`;
+  el('resultIndices').textContent = `${fmtIndex(data.start_index)} → ${fmtIndex(data.end_index)}`;
 
   // Grafik + açıklama (TÜFE / ENAG / İTO)
   renderChartLegend(data);
@@ -191,15 +237,26 @@ function renderResult(amount, payload, data) {
     startLabel, endLabel,
     startYear: payload.start_year, endYear: payload.end_year,
     amount, result: data.result,
+    startKey: data.start_key, endKey: data.end_key,
   };
-  renderAssetChip('usdChip', a.usd, infoCtx);
-  renderAssetChip('eurChip', a.eur, infoCtx);
-  renderAssetChip('goldChip', a.gold, infoCtx);
+  for (const [key, id] of PRIMARY_ASSETS) renderAssetChip(id, a[key], infoCtx);
   renderMinwageChip(data.minwage, payload, infoCtx);
+  renderMoreSection(data, infoCtx);
 
   // Uyarı notu
-  const notes = ['ENAG ve İTO bağımsız/topluluk kaynaklıdır, resmi değildir.'];
-  if (data.series && data.series.enag) notes.push('ENAG çizgisi yalnızca 2020 sonrasını kapsar.');
+  const notes = [];
+  if (data.old_lira_start) {
+    notes.push(data.old_lira_end
+      ? 'Tutar ve sonuç, o dönemin parası (eski TL) cinsindendir.'
+      : 'Tutar eski TL kabul edildi; sonuç bugünkü TL cinsindendir.');
+  }
+  if (data.estimated_start && data.official_start) {
+    notes.push(
+      `${data.official_start.slice(0, 4)} öncesi için TÜİK'in aylık TÜFE'si yoktur; ` +
+      'o dönem İTO İstanbul endeksiyle uzatılmıştır (tahmini).');
+  }
+  notes.push('İTO İstanbul’u kapsar, ENAG bağımsızdır — ikisi de resmi Türkiye enflasyonu değildir.');
+  if (data.series && data.series.enag) notes.push('ENAG çizgisi Eylül 2020 sonrasını kapsar.');
   el('caveat').innerHTML =
     `<span class="inline-flex items-start gap-1.5">` +
     `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" class="mt-px h-3.5 w-3.5 shrink-0 opacity-70">` +
@@ -230,21 +287,63 @@ function renderChartLegend(data) {
   ).join('');
 }
 
+// Varlığın "kaç birim" biçimi: altın gram, dolar/euro sembol önde, diğerleri birim sonda.
+function unitFormatter(asset) {
+  if (asset.kind === 'currency') return (x) => `${asset.symbol}${numFormatter.format(x)}`;
+  return (x) => `${numFormatter.format(x)} ${asset.symbol}`;
+}
+
+function assetChipInner(asset, ctx) {
+  const fmt = unitFormatter(asset);
+  const pos = asset.change_pct >= 0;
+  return (
+    `<div class="flex items-center justify-between text-[12px]">
+       <span class="font-600">${asset.label}</span>
+       <span class="font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${fmtChangeSigned(asset.change_pct)}</span>
+     </div>
+     <div class="mt-0.5 pr-7 text-[13px] tabular-nums">${fmt(asset.unit_start)} <span class="text-ink-soft">→</span> ${fmt(asset.unit_end)}</div>` +
+    chipInfoBlock(assetPopHTML(asset, ctx))
+  );
+}
+
 function renderAssetChip(id, asset, ctx) {
   const chip = el(id);
   if (!asset) { chip.classList.add('hidden'); return; }
   chip.classList.remove('hidden');
-  const fmt = asset.kind === 'weight'
-    ? (x) => `${numFormatter.format(x)} ${asset.symbol}`
-    : (x) => `${asset.symbol}${numFormatter.format(x)}`;
-  const pos = asset.change_pct >= 0;
-  chip.innerHTML =
-    `<div class="flex items-center justify-between text-[12px]">
-       <span class="font-600">${asset.label}</span>
-       <span class="font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${pos ? '+' : ''}%${numFormatter.format(asset.change_pct)}</span>
-     </div>
-     <div class="mt-0.5 pr-7 text-[13px] tabular-nums">${fmt(asset.unit_start)} <span class="text-ink-soft">→</span> ${fmt(asset.unit_end)}</div>` +
-    chipInfoBlock(assetPopHTML(asset, ctx));
+  chip.innerHTML = assetChipInner(asset, ctx);
+}
+
+// "Daha fazla" bölümü: ek varlık chip'leri + diğer fiyat endeksleri (ÜFE, konut, toptan eşya).
+function renderMoreSection(data, ctx) {
+  const assets = data.assets || {};
+  const extra = MORE_ASSETS.filter((k) => assets[k]);
+  el('moreChips').innerHTML = extra
+    .map((k) => `<div class="chip">${assetChipInner(assets[k], ctx)}</div>`)
+    .join('');
+
+  const indicators = data.indicators || {};
+  const keys = Object.keys(indicators);
+  el('indicatorList').innerHTML = keys.map((k) => {
+    const it = indicators[k];
+    const pos = it.change_pct >= 0;
+    return (
+      `<div class="ind-row">
+         <span>${it.label} <span class="ind-hint">${it.hint}</span></span>
+         <span class="font-700 tabular-nums ${pos ? 'text-down' : 'text-up'}">${fmtChange(it.change_pct)}</span>
+       </div>`
+    );
+  }).join('');
+
+  // Gösterilecek hiçbir şey yoksa açma düğmesini gizle.
+  const empty = extra.length === 0 && keys.length === 0;
+  el('moreToggle').classList.toggle('hidden', empty);
+  if (empty) setMoreOpen(false);
+}
+
+function setMoreOpen(open) {
+  el('moreSection').classList.toggle('hidden', !open);
+  el('moreToggle').setAttribute('aria-expanded', String(open));
+  el('moreToggleText').textContent = open ? 'Gizle' : 'Diğer varlıklar ve göstergeler';
 }
 
 function renderMinwageChip(m, payload, ctx) {
@@ -260,7 +359,7 @@ function renderMinwageChip(m, payload, ctx) {
   chip.innerHTML =
     `<div class="flex items-center justify-between text-[12px]">
        <span class="font-600">Asgari ücret</span>
-       <span class="font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${pos ? '+' : ''}%${numFormatter.format(m.change_pct)}</span>
+       <span class="font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${fmtChangeSigned(m.change_pct)}</span>
      </div>
      <div class="mt-0.5 ${hasWages ? '' : 'pr-7 '}text-[13px] tabular-nums">${numFormatter.format(m.ratio_start)} <span class="text-ink-soft">→</span> ${numFormatter.format(m.ratio_end)} maaş</div>
      ${wageLine}` +
@@ -293,57 +392,72 @@ function popBody(title, rows, noteHTML, calcLine, verdict, pos) {
   );
 }
 
-// Dolar / Euro / Altın açılır kutusunun içeriği.
+// "1 $" / "1 gr altın" / "1 varil Brent petrol" — fiyat satırlarında kullanılan birim adı.
+function priceUnitLabel(asset) {
+  if (asset.kind === 'currency') return `1 ${asset.symbol}`;
+  return `1 ${asset.symbol} ${asset.label.toLowerCase()}`;
+}
+
+// Dolar / Euro / Altın / Cumhuriyet altını / BIST / Brent açılır kutusunun içeriği.
 function assetPopHTML(asset, ctx) {
-  const isWeight = asset.kind === 'weight';
-  const rise = (asset.price_end / asset.price_start - 1) * 100;
-  const riseAbs = numFormatter.format(Math.abs(rise));
+  const isCurrency = asset.kind === 'currency';
+  // price_start/price_end kendi dönemlerinin para biriminde; artış oranı backend'den gelir.
+  const rise = asset.price_change_pct;
   const riseVerb = rise >= 0 ? 'arttı' : 'azaldı';
   const pos = asset.change_pct >= 0;
-  const pctAbs = numFormatter.format(Math.abs(asset.change_pct));
-  const fmt = isWeight
-    ? (x) => `${numFormatter.format(x)} ${asset.symbol}`
-    : (x) => `${asset.symbol}${numFormatter.format(x)}`;
+  const pctAbs = fmtChange(Math.abs(asset.change_pct));
+  const fmt = unitFormatter(asset);
+  const priceLabel = priceUnitLabel(asset);
 
-  const priceLabel = isWeight ? '1 gr altın' : `1 ${asset.symbol}`;
+  // Fiyat serisi seçilen ayda yoksa en yakın önceki ay kullanılır — hangisi olduğunu göster.
+  const monthNote = (key, fallbackKey) =>
+    (fallbackKey && fallbackKey !== key) ? ` <span class="ind-hint">(${monthShort(fallbackKey)})</span>` : '';
+
   const rows =
-    `<div class="chip-pop-row"><span>${ctx.startLabel}</span><span>${priceLabel} = ${tlFormatter.format(asset.price_start)}</span></div>` +
-    `<div class="chip-pop-row"><span>${ctx.endLabel}</span><span>${priceLabel} = ${tlFormatter.format(asset.price_end)}</span></div>`;
+    `<div class="chip-pop-row"><span>${ctx.startLabel}${monthNote(ctx.startKey, asset.price_start_key)}</span>` +
+    `<span>${priceLabel} = ${tlFormatter.format(asset.price_start)}</span></div>` +
+    `<div class="chip-pop-row"><span>${ctx.endLabel}${monthNote(ctx.endKey, asset.price_end_key)}</span>` +
+    `<span>${priceLabel} = ${tlFormatter.format(asset.price_end)}</span></div>`;
 
-  const riseLine = isWeight
-    ? `Gram altın bu dönemde %${riseAbs} ${riseVerb}.`
-    : `${asset.label}/TL bu dönemde %${riseAbs} ${riseVerb} (kur artışı).`;
+  const riseLine = isCurrency
+    ? `${asset.label}/TL bu dönemde ${fmtChange(Math.abs(rise))} ${riseVerb} (kur artışı).`
+    : `${asset.label} fiyatı TL cinsinden ${fmtChange(Math.abs(rise))} ${riseVerb}.`;
 
   // Para biriminin "kendi" enflasyonu (ABD TÜFE / Euro Bölgesi HICP) — backend'den gelirse.
-  let foreignLine = '';
-  if (!isWeight && asset.cpi_change_pct != null) {
+  let extraLine = '';
+  if (asset.cpi_change_pct != null) {
     const c = asset.cpi_change_pct;
-    const cAbs = numFormatter.format(Math.abs(c));
+    const cAbs = fmtChange(Math.abs(c));
     if (c >= 0) {
       const loss = (1 - 1 / (1 + c / 100)) * 100; // birimin kendi alım gücü kaybı
-      foreignLine =
-        `<span class="chip-pop-foreign">${asset.cpi_region}'de fiyatlar bu dönemde ~%${cAbs} arttı; ` +
+      extraLine =
+        `<span class="chip-pop-foreign">${asset.cpi_region}'de fiyatlar bu dönemde ~${cAbs} arttı; ` +
         `yani ${asset.label.toLowerCase()} kendi içinde ~%${numFormatter.format(loss)} değer kaybetti (yıllık, yaklaşık).</span>`;
     } else {
-      foreignLine = `<span class="chip-pop-foreign">${asset.cpi_region}'de fiyatlar bu dönemde ~%${cAbs} azaldı (yıllık, yaklaşık).</span>`;
+      extraLine = `<span class="chip-pop-foreign">${asset.cpi_region}'de fiyatlar bu dönemde ~${cAbs} azaldı (yıllık, yaklaşık).</span>`;
     }
+  } else if (asset.usd_change_pct != null) {
+    // Altın/petrol: TL fiyatındaki artışın ne kadarı TL'nin erimesi, ne kadarı varlığın
+    // kendi değerlenmesi? Dolar cinsinden fiyat bunu ayırır.
+    const u = asset.usd_change_pct;
+    extraLine =
+      `<span class="chip-pop-foreign">Dolar cinsinden (${asset.usd_unit}) fiyatı ise ` +
+      `${fmtChange(Math.abs(u))} ${u >= 0 ? 'arttı' : 'azaldı'} — artışın bu kısmı TL'nin ` +
+      `değer kaybından değil, varlığın kendi hareketinden gelir.</span>`;
   }
-  const noteHTML = riseLine + foreignLine;
+  const noteHTML = riseLine + extraLine;
 
-  const calcLine = isWeight
-    ? `${tlFormatter.format(ctx.amount)} o gün ${fmt(asset.unit_start)} altın alırdı; TÜFE'ye göre güncellenen ${tlFormatter.format(ctx.result)} bugün ${fmt(asset.unit_end)} alır.`
-    : `${tlFormatter.format(ctx.amount)} o gün ${fmt(asset.unit_start)} ederdi; TÜFE'ye göre güncellenen ${tlFormatter.format(ctx.result)} bugün ${fmt(asset.unit_end)} eder.`;
+  const calcLine = isCurrency
+    ? `${tlFormatter.format(ctx.amount)} o gün ${fmt(asset.unit_start)} ederdi; TÜFE'ye göre güncellenen ${tlFormatter.format(ctx.result)} bugün ${fmt(asset.unit_end)} eder.`
+    : `${tlFormatter.format(ctx.amount)} o gün ${fmt(asset.unit_start)} ${asset.label.toLowerCase()} alırdı; TÜFE'ye göre güncellenen ${tlFormatter.format(ctx.result)} bugün ${fmt(asset.unit_end)} alır.`;
 
-  let verdict;
-  if (isWeight) {
-    verdict = pos
-      ? `Altın resmi enflasyonun gerisinde kaldı — aynı parayla %${pctAbs} <b>daha çok</b> altın alıyorsunuz.`
-      : `Altın resmi enflasyonu geçti — aynı parayla %${pctAbs} <b>daha az</b> altın alıyorsunuz.`;
-  } else {
-    verdict = pos
-      ? `Resmi enflasyon ${asset.label} karşısında öne geçti — paranızın ${asset.label} cinsinden alım gücü %${pctAbs} <b>arttı</b>.`
-      : `${asset.label} resmi enflasyonu geçti — paranızın ${asset.label} cinsinden alım gücü %${pctAbs} <b>eridi</b>.`;
-  }
+  const verdict = isCurrency
+    ? (pos
+      ? `Resmi enflasyon ${asset.label} karşısında öne geçti — paranızın ${asset.label} cinsinden alım gücü ${pctAbs} <b>arttı</b>.`
+      : `${asset.label} resmi enflasyonu geçti — paranızın ${asset.label} cinsinden alım gücü ${pctAbs} <b>eridi</b>.`)
+    : (pos
+      ? `${asset.label} resmi enflasyonun gerisinde kaldı — aynı parayla ${pctAbs} <b>daha çok</b> alıyorsunuz.`
+      : `${asset.label} resmi enflasyonu geçti — aynı parayla ${pctAbs} <b>daha az</b> alıyorsunuz.`);
 
   return popBody(`${asset.label} nasıl hesaplandı?`, rows, noteHTML, calcLine, verdict, pos);
 }
@@ -351,19 +465,19 @@ function assetPopHTML(asset, ctx) {
 // Asgari ücret açılır kutusunun içeriği.
 function minwagePopHTML(m, ctx) {
   const rise = (m.wage_end / m.wage_start - 1) * 100;
-  const riseAbs = numFormatter.format(Math.abs(rise));
+  const riseAbs = fmtChange(Math.abs(rise));
   const riseVerb = rise >= 0 ? 'arttı' : 'azaldı';
   const pos = m.change_pct >= 0;
-  const pctAbs = numFormatter.format(Math.abs(m.change_pct));
+  const pctAbs = fmtChange(Math.abs(m.change_pct));
 
   const rows =
     `<div class="chip-pop-row"><span>${ctx.startYear} net asgari ücret</span><span>${tlFormatter.format(m.wage_start)}</span></div>` +
     `<div class="chip-pop-row"><span>${ctx.endYear} net asgari ücret</span><span>${tlFormatter.format(m.wage_end)}</span></div>`;
-  const riseLine = `Asgari ücret bu dönemde %${riseAbs} ${riseVerb}.`;
+  const riseLine = `Asgari ücret bu dönemde ${riseAbs} ${riseVerb}.`;
   const calcLine = `${tlFormatter.format(ctx.amount)}, ${ctx.startYear} yılında ${numFormatter.format(m.ratio_start)} maaş ederdi; TÜFE'ye göre güncellenen ${tlFormatter.format(ctx.result)}, ${ctx.endYear} yılında ${numFormatter.format(m.ratio_end)} maaş eder.`;
   const verdict = pos
-    ? `Tutarınız daha çok “maaş” ediyor — alım gücünüz asgari ücrete göre %${pctAbs} <b>arttı</b>.`
-    : `Asgari ücret paranızdan hızlı arttı — tutarınız %${pctAbs} <b>daha az “maaş”</b> ediyor.`;
+    ? `Tutarınız daha çok “maaş” ediyor — alım gücünüz asgari ücrete göre ${pctAbs} <b>arttı</b>.`
+    : `Asgari ücret paranızdan hızlı arttı — tutarınız ${pctAbs} <b>daha az “maaş”</b> ediyor.`;
 
   return popBody('Asgari ücret nasıl hesaplandı?', rows, riseLine, calcLine, verdict, pos);
 }
@@ -395,6 +509,20 @@ function openChipPop(chip, btn) {
   pop.style.left = (leftVP - chipRect.left) + 'px';
 }
 
+// Değerleri 0–1 aralığına eşleyen ölçek. Çok uzun dönemlerde (ör. 1964→2026, değer
+// 37 milyon kat artar) doğrusal eksen düz çizgi gibi görünür; bu yüzden aradaki fark
+// 100 katı aşınca logaritmik eksene geçilir — enflasyon grafiklerinde standart yaklaşım.
+function chartScale(vals) {
+  const max = Math.max(...vals), min = Math.min(...vals);
+  if (min > 0 && max / min > 100) {
+    const lo = Math.log10(min), hi = Math.log10(max);
+    const fn = (v) => (Math.log10(Math.max(v, min)) - lo) / ((hi - lo) || 1);
+    fn.log = true;
+    return fn;
+  }
+  return (v) => (v - min) / ((max - min) || 1);
+}
+
 function drawChart(series) {
   const c = el('chart');
   if (!series || !series.labels || series.labels.length === 0) { c.innerHTML = ''; return; }
@@ -404,10 +532,11 @@ function drawChart(series) {
   if (vals.length === 0) { c.innerHTML = ''; return; }
 
   const SC = seriesColors();
-  const max = Math.max(...vals), min = Math.min(...vals);
+  const scale = chartScale(vals);
+  el('chartScaleNote').classList.toggle('hidden', !scale.log);
   const W = 600, H = 140, padT = 6, padB = 6, padX = 2, n = series.labels.length;
   const X = (i) => padX + (W - 2 * padX) * (n <= 1 ? 0.5 : i / (n - 1));
-  const Y = (val) => padT + (H - padT - padB) * (1 - (val - min) / ((max - min) || 1));
+  const Y = (val) => padT + (H - padT - padB) * (1 - scale(val));
   const dpath = (arr) => {
     let d = '', started = false;
     arr.forEach((val, i) => {
@@ -551,10 +680,10 @@ async function buildShareCanvas(theme = 'light') {
     }
 
     const cx0 = P, cw = W - 2 * P, cy0 = y + 24, ch = 300;
-    const max = Math.max(...vals), min = Math.min(...vals);
+    const scale = chartScale(vals);
     const n = series.labels.length;
     const X = (i) => cx0 + cw * (n <= 1 ? 0.5 : i / (n - 1));
-    const Y = (v) => cy0 + ch * (1 - (v - min) / ((max - min) || 1));
+    const Y = (v) => cy0 + ch * (1 - scale(v));
     const trace = (arr) => {
       ctx.beginPath();
       let started = false;
@@ -587,14 +716,16 @@ async function buildShareCanvas(theme = 'light') {
   y += 52;
   const rows = [];
   const a = data.assets || {};
-  const fmtUnit = (asset, v) => asset.kind === 'weight'
-    ? `${numFormatter.format(v)} ${asset.symbol}` : `${asset.symbol}${numFormatter.format(v)}`;
-  for (const key of ['usd', 'eur', 'gold']) {
-    const as = a[key];
-    if (as) rows.push([as.label, `${fmtUnit(as, as.unit_start)} → ${fmtUnit(as, as.unit_end)}`, as.change_pct]);
-  }
   if (data.minwage) {
     rows.push(['Asgari ücret', `${numFormatter.format(data.minwage.ratio_start)} → ${numFormatter.format(data.minwage.ratio_end)} maaş`, data.minwage.change_pct]);
+  }
+  // Görsel sabit boyutlu; en fazla 6 kutu (3 satır) sığar.
+  for (const key of ['usd', 'eur', 'gold', 'cgold', 'bist', 'brent']) {
+    if (rows.length >= 6) break;
+    const as = a[key];
+    if (!as) continue;
+    const fmt = unitFormatter(as);
+    rows.push([as.label, `${fmt(as.unit_start)} → ${fmt(as.unit_end)}`, as.change_pct]);
   }
   const colW = (W - 2 * P - 28) / 2;
   rows.forEach((r, i) => {
@@ -606,7 +737,7 @@ async function buildShareCanvas(theme = 'light') {
     ctx.fillStyle = C.ink; ctx.font = sans(20, 600);
     ctx.fillText(r[0], bx + 18, by + 30);
     const pos = r[2] >= 0;
-    const pct = `${pos ? '+' : ''}%${numFormatter.format(r[2])}`;
+    const pct = fmtChangeSigned(r[2]);
     ctx.fillStyle = pos ? C.up : C.accent; ctx.font = sans(20, 700);
     ctx.fillText(pct, bx + colW - 18 - ctx.measureText(pct).width, by + 30);
     ctx.fillStyle = C.soft; ctx.font = sans(20, 500);
@@ -620,7 +751,7 @@ async function buildShareCanvas(theme = 'light') {
   ctx.fillStyle = C.ink; ctx.font = sans(24, 700);
   ctx.fillText('TL Enflasyon Hesaplayıcı', P, H - 80);
   ctx.fillStyle = C.soft; ctx.font = sans(18, 400);
-  ctx.fillText('ENAG ve İTO bağımsız/topluluk kaynaklıdır, resmi değildir.', P, H - 44);
+  ctx.fillText('Kaynak: TCMB EVDS. ENAG ve İTO resmi Türkiye enflasyonu değildir.', P, H - 44);
 
   return canvas;
 }
@@ -732,6 +863,53 @@ function closeShareModal() {
   exportBtn.setAttribute('aria-expanded', 'false');
 }
 
+// ---------- Güncel enflasyon şeridi ----------
+
+// En son açıklanan aya ait ölçümler (TÜFE, ENAG, İTO, ÜFE, konut) ve varlık fiyatları.
+// Resmi olmayan ölçümler küçük bir noktayla işaretlenir.
+function renderLatestStrip(latest) {
+  if (!latest) return;
+  const cards = [];
+
+  for (const m of latest.measures || []) {
+    if (m.annual == null) continue;
+    const dot = m.official ? '' : '<span class="stat-dot" aria-hidden="true"></span>';
+    const monthly = m.monthly == null ? '' : ` · aylık %${numFormatter.format(m.monthly)}`;
+    cards.push(
+      `<div class="stat" title="${m.hint || ''}">
+         <div class="stat-label">${dot}${m.label}</div>
+         <div class="stat-value">${fmtChange(m.annual)}</div>
+         <div class="stat-sub">${monthShort(m.month)}${monthly}</div>
+       </div>`);
+  }
+
+  for (const a of latest.assets || []) {
+    const annual = a.annual == null ? '' : ` · yıllık ${fmtChangeSigned(a.annual)}`;
+    cards.push(
+      `<div class="stat">
+         <div class="stat-label">${a.label}</div>
+         <div class="stat-value">${tlFormatter.format(a.price)}</div>
+         <div class="stat-sub">${monthShort(a.month)}${annual}</div>
+       </div>`);
+  }
+
+  el('latestStrip').innerHTML = cards.join('');
+}
+
+// ---------- Yıllara göre enflasyon tablosu ----------
+
+function renderYearly(rows) {
+  const cell = (v) => (v == null ? '<td class="muted">—</td>' : `<td>${fmtChange(v)}</td>`);
+  el('yearlyBody').innerHTML = (rows || []).slice().reverse().map((r) => {
+    const partial = r.partial && r.through
+      ? ` <span class="muted">· ${monthShort(r.through)}</span>` : '';
+    return `<tr><td>${r.year}${partial}</td>${cell(r.tufe)}${cell(r.enag)}${cell(r.ito)}</tr>`;
+  }).join('');
+}
+
+function openYearlyModal() { el('yearlyModal').classList.remove('hidden'); }
+function closeYearlyModal() { el('yearlyModal').classList.add('hidden'); }
+
 // ---------- Başlatma ----------
 
 async function init() {
@@ -744,6 +922,11 @@ async function init() {
     }
     DATA.values = data.values || {};
     buildSelectors();
+    renderLatestStrip(data.latest);
+    renderYearly(data.yearly);
+    if (data.start && data.end) {
+      el('rangeHint').textContent = `${data.start.slice(0, 4)}'ten bugüne`;
+    }
     if (data.fetched_at) {
       const d = new Date(data.fetched_at * 1000);
       el('footerMeta').textContent = ` Güncel: ${d.toLocaleDateString('tr-TR')}.`;
@@ -754,7 +937,10 @@ async function init() {
 }
 
 calcBtn.addEventListener('click', calculate);
-startYear.addEventListener('change', () => refreshMonths(startMonth, startYear.value, 'first'));
+startYear.addEventListener('change', () => {
+  refreshMonths(startMonth, startYear.value, 'first');
+  updateAmountHint();
+});
 endYear.addEventListener('change', () => refreshMonths(endMonth, endYear.value, 'last'));
 amountInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') calculate(); });
 amountInput.addEventListener('blur', () => {
@@ -762,12 +948,25 @@ amountInput.addEventListener('blur', () => {
   if (n && n > 0) amountInput.value = numFormatter.format(n);
 });
 
+// "Diğer varlıklar ve göstergeler" bölümünü aç/kapat
+el('moreToggle').addEventListener('click', () =>
+  setMoreOpen(el('moreToggle').getAttribute('aria-expanded') !== 'true'));
+
+// Yıllara göre enflasyon tablosu
+el('yearlyBtn').addEventListener('click', openYearlyModal);
+el('yearlyClose').addEventListener('click', closeYearlyModal);
+el('yearlyModal').addEventListener('click', (e) => {
+  if (e.target === el('yearlyModal')) closeYearlyModal();
+});
+
 // Dışa aktarma: önizleme modalı (görsel açık/karanlık seçilebilir, indirmeden önce görülür)
 exportBtn.addEventListener('click', openShareModal);
 el('shareClose').addEventListener('click', closeShareModal);
 el('shareModal').addEventListener('click', (e) => { if (e.target === el('shareModal')) closeShareModal(); });
 document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && !el('shareModal').classList.contains('hidden')) closeShareModal();
+  if (e.key !== 'Escape') return;
+  if (!el('shareModal').classList.contains('hidden')) closeShareModal();
+  if (!el('yearlyModal').classList.contains('hidden')) closeYearlyModal();
 });
 document.querySelectorAll('[data-share-theme]').forEach((b) =>
   b.addEventListener('click', () => { shareTheme = b.dataset.shareTheme; renderSharePreview(); }));

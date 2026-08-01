@@ -126,6 +126,92 @@ body { transition: background-color 0.25s ease, color 0.25s ease; }
 .chip-pop-calc { color: rgb(var(--c-ink-soft)); }
 .chip-pop-verdict { margin-top: 0.45rem; font-weight: 600; }
 
+/* ---------- Güncel enflasyon şeridi (başlığın altında) ---------- */
+.stat-strip {
+  display: flex;
+  gap: 0.5rem;
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding-bottom: 0.15rem;
+}
+.stat-strip::-webkit-scrollbar { height: 4px; }
+.stat-strip::-webkit-scrollbar-thumb { background: rgb(var(--c-line)); border-radius: 4px; }
+.stat {
+  flex: 1 0 auto;
+  min-width: 8.5rem;
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 0.5rem;
+  background: rgb(var(--c-card) / 0.6);
+  padding: 0.4rem 0.6rem;
+  line-height: 1.25;
+}
+.stat-label {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 10.5px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgb(var(--c-ink-soft));
+  white-space: nowrap;
+}
+/* Resmi olmayan (bağımsız) ölçümler için küçük nokta işareti */
+.stat-dot { height: 0.4rem; width: 0.4rem; border-radius: 9999px; background: rgb(var(--c-accent)); }
+.stat-value { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stat-sub { font-size: 10.5px; color: rgb(var(--c-ink-soft)); font-variant-numeric: tabular-nums; }
+
+/* ---------- "Daha fazla" açılır bölümü ---------- */
+.more-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: rgb(var(--c-ink-soft));
+  cursor: pointer;
+  transition: color 0.15s;
+}
+.more-toggle:hover { color: rgb(var(--c-ink)); }
+.more-toggle svg { height: 0.85rem; width: 0.85rem; transition: transform 0.2s; }
+.more-toggle[aria-expanded="true"] svg { transform: rotate(180deg); }
+
+/* Gösterge satırları (ÜFE, konut, toptan eşya) */
+.ind-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.28rem 0;
+  font-size: 12px;
+  border-top: 1px solid rgb(var(--c-line));
+}
+.ind-row:first-child { border-top: 0; }
+.ind-row .ind-hint { font-size: 10.5px; color: rgb(var(--c-ink-soft)); }
+
+/* ---------- Yıllara göre enflasyon tablosu ---------- */
+.year-table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+.year-table th, .year-table td { padding: 0.35rem 0.5rem; text-align: right; font-variant-numeric: tabular-nums; }
+.year-table th:first-child, .year-table td:first-child { text-align: left; font-weight: 600; }
+.year-table thead th {
+  position: sticky;
+  top: 0;
+  background: rgb(var(--c-card));
+  border-bottom: 1px solid rgb(var(--c-line));
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: rgb(var(--c-ink-soft));
+}
+.year-table tbody tr + tr td { border-top: 1px solid rgb(var(--c-line) / 0.6); }
+.year-table .muted { color: rgb(var(--c-ink-soft)); }
+.year-scroll { max-height: 58vh; overflow-y: auto; }
+
+/* Modal genişliği: yıllık tablo paylaşım modalından daha geniş olsun */
+.modal-card--wide { max-width: 32rem; }
+
 /* Sonuç sayısı "pop" animasyonu */
 @keyframes pop {
   0%   { transform: scale(0.96); opacity: 0.5; }

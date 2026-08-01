@@ -43,7 +43,7 @@
 </head>
 
 <body class="bg-paper font-sans text-ink md:h-screen md:overflow-hidden">
-  <main class="mx-auto flex min-h-screen max-w-5xl flex-col justify-center gap-5 px-5 py-6">
+  <main class="mx-auto flex min-h-screen max-w-5xl flex-col justify-center gap-4 px-5 py-5">
 
     <!-- Masthead -->
     <header>
@@ -64,9 +64,24 @@
       </h1>
       <p class="mt-1.5 text-[14px] leading-snug text-ink-soft">
         Geçmişteki bir tutar bugün ne eder? <em class="font-serif italic">Alım gücünü</em>
-        resmi (TÜFE) ve bağımsız (ENAG, İTO) ölçümlerle yan yana görün.
+        <span id="rangeHint">1964'ten bugüne</span> TÜFE, ENAG ve İTO ölçümleriyle;
+        dolar, euro, altın, borsa ve petrol karşısında yan yana görün.
       </p>
     </header>
+
+    <!-- Güncel enflasyon şeridi — en son açıklanan aya ait ölçümler -->
+    <!-- min-w-0: flex öğesinin varsayılan min-width:auto değeri, yatayda kayan şeridin
+         sayfayı genişletmesine yol açar; dar ekranlarda taşmayı bu engeller. -->
+    <section aria-label="Güncel enflasyon" class="min-w-0">
+      <div class="flex items-baseline justify-between gap-3">
+        <p class="text-[11px] font-semibold uppercase tracking-[0.14em] text-ink-soft">Güncel enflasyon</p>
+        <button id="yearlyBtn" type="button" aria-haspopup="dialog"
+          class="text-[11px] font-semibold text-ink-soft underline decoration-line underline-offset-2 transition hover:text-ink">
+          Yıllara göre tablo
+        </button>
+      </div>
+      <div id="latestStrip" class="stat-strip mt-1.5"></div>
+    </section>
 
     <div class="grid gap-5 md:grid-cols-2 md:items-stretch">
 
@@ -79,6 +94,8 @@
             class="w-full bg-transparent px-4 py-3 text-lg font-semibold tabular-nums outline-none placeholder:text-ink-soft/50"
             placeholder="0" />
         </div>
+        <!-- 2005 öncesi tarihlerde tutar "eski TL" kabul edilir (1 milyon eski TL = 1 ₺) -->
+        <p id="amountHint" class="mt-1.5 hidden text-[11px] leading-snug text-ink-soft"></p>
 
         <p class="mt-5 text-[13px] font-semibold">Şu tarihteki:</p>
         <div class="mt-2 grid grid-cols-2 gap-3">
@@ -145,7 +162,7 @@
 
           <div class="mt-1.5 flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
             <div>
-              <p class="text-[12px] text-ink-soft">Resmi (TÜFE) karşılığı</p>
+              <p id="resultLabel" class="text-[12px] text-ink-soft">Resmi (TÜFE) karşılığı</p>
               <p id="resultValue" class="font-serif text-[2rem] font-600 leading-none tabular-nums sm:text-[2.4rem]">₺0</p>
             </div>
             <p id="resultChange" class="inline-flex items-center gap-1 text-xl font-700 tabular-nums">—</p>
@@ -160,7 +177,9 @@
             <div id="chartLegend" class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]"></div>
             <div id="chart" class="mt-1"></div>
             <div class="mt-0.5 flex justify-between text-[10px] text-ink-soft">
-              <span id="chartStart"></span><span id="chartEnd"></span>
+              <span id="chartStart"></span>
+              <span id="chartScaleNote" class="hidden opacity-70">logaritmik ölçek</span>
+              <span id="chartEnd"></span>
             </div>
           </div>
 
@@ -170,6 +189,18 @@
             <div id="eurChip" class="chip hidden"></div>
             <div id="goldChip" class="chip hidden"></div>
             <div id="minwageChip" class="chip hidden"></div>
+          </div>
+
+          <!-- Ek varlıklar (Cumhuriyet altını, BIST 100, Brent) + diğer fiyat endeksleri -->
+          <button id="moreToggle" type="button" class="more-toggle" aria-expanded="false" aria-controls="moreSection">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+            </svg>
+            <span id="moreToggleText">Diğer varlıklar ve göstergeler</span>
+          </button>
+          <div id="moreSection" class="hidden">
+            <div id="moreChips" class="mt-2 grid grid-cols-2 gap-2"></div>
+            <div id="indicatorList" class="mt-2"></div>
           </div>
 
           <p id="caveat" class="mt-3 text-[11px] leading-relaxed text-ink-soft"></p>
@@ -190,12 +221,37 @@
         <span class="sm:ml-auto">Geliştiren: <strong class="font-600 text-ink">Asım Mirza Çiftler</strong></span>
       </div>
       <p>
-        Kaynak: TCMB EVDS — TÜFE (2003=100) ve USD/TL.<span id="footerMeta"></span>
-        ENAG (Eylül 2020'den) ve İTO (2003'ten) bağımsız/topluluk kaynaklıdır, resmi değildir;
-        İTO için resmi TÜFE'ye İTO–TÜİK farkı uygulanır.
+        Kaynak: TCMB EVDS — TÜİK TÜFE (2003=100), İTO endeksleri, kur ve varlık fiyatları.<span id="footerMeta"></span>
+        TÜİK'in aylık TÜFE'si 1982'de başlar; öncesi İTO İstanbul endeksiyle uzatılmıştır (tahmini).
+        İTO İstanbul'u kapsar, ENAG (Eylül 2020'den) bağımsızdır — ikisi de resmi Türkiye enflasyonu değildir.
       </p>
     </footer>
   </main>
+
+  <!-- Yıllara göre enflasyon tablosu -->
+  <div id="yearlyModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="yearlyModalTitle">
+    <div class="modal-card modal-card--wide">
+      <div class="flex items-center justify-between gap-3">
+        <h2 id="yearlyModalTitle" class="font-serif text-[1.1rem] font-600 text-ink">Yıllara göre enflasyon</h2>
+        <button id="yearlyClose" type="button" aria-label="Kapat" class="rounded-md p-1 text-ink-soft transition hover:text-ink">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="h-5 w-5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
+      <p class="mt-1 text-[11.5px] leading-snug text-ink-soft">
+        Yıl sonu (Aralık → Aralık) 12 aylık değişim. TÜFE 1982 öncesinde İTO endeksiyle uzatılmıştır.
+      </p>
+      <div class="year-scroll mt-2.5">
+        <table class="year-table">
+          <thead>
+            <tr><th>Yıl</th><th>TÜFE</th><th>ENAG</th><th>İTO</th></tr>
+          </thead>
+          <tbody id="yearlyBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
 
   <!-- Paylaşım / dışa aktarma önizleme modalı -->
   <div id="shareModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="shareModalTitle">

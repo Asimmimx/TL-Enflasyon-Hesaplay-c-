@@ -4,8 +4,8 @@
 > — kurulum gerektirmeden, tarayıcıdan hemen deneyin.
 
 Türk Lirası'nın geçmişten günümüze **alım gücünü** hesaplayan modern bir web uygulaması.
-Veriler **TCMB EVDS** (Elektronik Veri Dağıtım Sistemi) servisinden, **TÜFE Genel Endeks
-(2003=100)** serisi (`TP.FG.J0`) kullanılarak otomatik çekilir ve önbelleğe alınır.
+Veriler **TCMB EVDS** (Elektronik Veri Dağıtım Sistemi) servisinden otomatik çekilir ve
+önbelleğe alınır. Aylık TÜFE zinciri **Ocak 1964'e** kadar uzanır (bkz. *TÜFE zinciri*).
 
 > **Hesaplama formülü:**
 > `Sonuç = Tutar × (Bitiş Tarihi TÜFE Endeksi ÷ Başlangıç Tarihi TÜFE Endeksi)`
@@ -19,23 +19,38 @@ Veriler **TCMB EVDS** (Elektronik Veri Dağıtım Sistemi) servisinden, **TÜFE 
 - 🖥️ **Tek ekran (kaydırmasız) düzen:** masaüstünde form solda, sonuçlar sağda; her şey görünür alana sığar
   (mobilde sütunlar alt alta gelir).
 - 🔢 Türkçe biçimli (₺1.000,50) tutar girişi.
-- 📅 Ay/Yıl seçilebilen, **yalnızca veri olan dönemleri** gösteren akıllı tarih seçiciler.
-- ⚡ Animasyonlu sonuç alanı: büyük TL sonucu, **toplam değişim %**, çarpan ve TÜFE endeks değerleri.
-- 💵 **Çoklu varlık bazında karşılaştırma:** Dolar, Euro ve **gram altın** — tutarın başlangıçtaki
-  ve enflasyona göre güncellenen tutarın bitişteki birim/gram karşılığı (TCMB kurları ile).
+- 📅 Ay/Yıl seçilebilen, **yalnızca veri olan dönemleri** gösteren akıllı tarih seçiciler
+  (**1964 – bugün**).
+- 📰 **Güncel enflasyon şeridi:** başlığın altında, en son açıklanan aya ait TÜFE, ENAG, İTO,
+  Yİ-ÜFE, konut fiyat endeksi ve güncel dolar/euro/altın/BIST/petrol değerleri.
+- 🗓️ **Yıllara göre enflasyon tablosu:** 1965'ten bugüne yıl sonu (Aralık→Aralık) TÜFE, ENAG
+  ve İTO oranları — tek tıkla açılan bir pencerede.
+- 💰 **Eski TL desteği:** 2005 öncesi bir tarih seçildiğinde tutar **eski TL** kabul edilir
+  (1.000.000 eski TL = ₺1) ve sonuç doğru para biriminde gösterilir.
+- ⚡ Animasyonlu sonuç alanı: büyük TL sonucu, **toplam değişim %** (çok uzun dönemlerde `×`
+  çarpanı olarak), çarpan ve TÜFE endeks değerleri.
+- 💵 **Çoklu varlık bazında karşılaştırma:** Dolar, Euro, **gram altın**, **Cumhuriyet altını**,
+  **BIST 100** ve **Brent petrol** — tutarın başlangıçtaki ve enflasyona göre güncellenen tutarın
+  bitişteki birim karşılığı (TCMB verileriyle).
+- 🏗️ **Diğer fiyat endeksleri:** Yurt İçi ÜFE (üretici fiyatları), TCMB Konut Fiyat Endeksi ve
+  İTO Toptan Eşya Fiyat Endeksi — seçilen dönemdeki toplam değişimleriyle.
 - 📉 **Zaman serisi grafiği:** tutarın değerinin aylar boyunca seyri; TÜFE, ENAG ve İTO çizgileri
-  bir arada (hafif, bağımsız SVG — ek bağımlılık yok).
+  bir arada (hafif, bağımsız SVG — ek bağımlılık yok). Değer aralığı 100 katı aşınca
+  **logaritmik eksene** geçer, böylece 60 yıllık dönemler de okunabilir kalır.
 - 👷 **Asgari ücret karşılaştırması:** "Bu tutar o tarihte kaç net asgari ücretti, bugün kaç?"
-- ℹ️ **"Nasıl hesaplandı?" bilgi kutuları:** her karşılaştırma kartının (Dolar, Euro, Altın,
-  Asgari ücret) sağ alt köşesindeki **ⓘ** düğmesine basınca açılan kutuda; o tarihteki **ham
-  değerler** (ör. *1 $ = ₺1,66 → ₺43,11*), dönemdeki **kur artışı** ve artış/azalışın ne anlama
-  geldiğine dair kısa bir **iyi/kötü yorumu** gösterilir. Dolar ve Euro için ayrıca o para biriminin
-  **kendi enflasyonu** (ABD TÜFE / Euro Bölgesi HICP — yıllık, yaklaşık) eklenir: ör. *"ABD'de
-  fiyatlar bu dönemde ~%75 arttı; yani dolar kendi içinde ~%43 değer kaybetti."*
+- ℹ️ **"Nasıl hesaplandı?" bilgi kutuları:** her karşılaştırma kartının sağ alt köşesindeki **ⓘ**
+  düğmesine basınca açılan kutuda; o tarihteki **ham değerler** (ör. *1 gr altın = ₺14 → ₺6.741,91*
+  — 2005 öncesi fiyatlar o günün parasıyla), dönemdeki **fiyat artışı** ve artış/azalışın ne anlama
+  geldiğine dair kısa bir **iyi/kötü yorumu** gösterilir. Ek olarak:
+  - **Dolar / Euro:** o para biriminin **kendi enflasyonu** (ABD TÜFE / Euro Bölgesi HICP —
+    yıllık, yaklaşık): *"ABD'de fiyatlar bu dönemde ~%75 arttı; yani dolar kendi içinde ~%43
+    değer kaybetti."*
+  - **Altın / petrol:** varlığın **dolar cinsinden** değişimi (ons altın, varil Brent) — böylece
+    TL fiyatındaki artışın ne kadarı TL'nin erimesi, ne kadarı varlığın kendi değerlenmesi ayrılır.
 - 📊 **Reel enflasyon (ENAG):** bağımsız ENAG verisiyle alternatif sonuç (2020+ dönemleri için —
   ENAG Eylül 2020'de kuruldu —, açıkça "bağımsız/doğrulanmamış" etiketiyle).
-- 🏛️ **İTO karşılaştırması:** İstanbul Ticaret Odası endeksiyle üçüncü bir ölçüm (2003+). Resmi TÜFE'ye
-  İTO–TÜİK farkı uygulanarak hesaplanır; böylece resmi veri bel kemiği kalır.
+- 🏛️ **İTO karşılaştırması:** İstanbul Ticaret Odası'nın *Ücretliler Geçinme Endeksi* ile üçüncü
+  bir ölçüm — **1964'ten** bugüne, doğrudan TCMB EVDS'den canlı çekilir.
 - 🟠 Veri olmayan tarihler / hatalı girişler için kibar, renkli uyarılar.
 - 🖼️ **Sonucu paylaş / dışa aktar:** sonucu sosyal medyaya uygun bir görsele (PNG) dönüştürür;
   indirmeden önce **açık/karanlık önizleme** sunar (kişisel ad veya site adresi içermez).
@@ -53,13 +68,10 @@ tlenflasyon/
 ├── app/
 │   ├── __init__.py
 │   ├── main.py          # FastAPI uygulaması (API + statik servis)
-│   ├── evds.py          # EVDS istemcisi (TÜFE + USD/EUR/altın) + önbellek
+│   ├── evds.py          # EVDS istemcisi: TÜFE zinciri, varlıklar, endeksler + önbellek
 │   ├── enag.py          # ENAG (reel enflasyon) verisi + normalizasyon
-│   ├── ito.py           # İTO endeksi (spread yöntemi)
 │   ├── foreign_cpi.py   # ABD (BLS) + Euro Bölgesi (Eurostat) yıllık enflasyon tablosu
-│   ├── minwage.py       # Net asgari ücret tablosu (yıllara göre)
-│   └── data/
-│       └── ito_data.json  # İTO/TÜİK topluluk verisi (aylık oranlar)
+│   └── minwage.py       # Net asgari ücret tablosu (yıllara göre)
 ├── static/
 │   ├── index.html       # Ana arayüz (hesaplayıcı)
 │   ├── destek.html      # Destek Ol (Amazon + Chrome eklentisi)
@@ -255,42 +267,66 @@ crontab -e
 - **EVDS yeni servisi:** TCMB, 2024'ten sonra servisi `evds2` → `evds3.tcmb.gov.tr/igmevdsms-dis`
   adresine taşıdı. İstekte parametreler **URL yoluna gömülür** ve API anahtarı `key`
   **HTTP başlığı** ile gönderilir. (`app/evds.py` bu biçimi kullanır.)
-- **Seriler:** TÜFE için `TP.FG.J0` (**2003=100**, aylık), dolar karşılaştırması için
-  `TP.DK.USD.A.YTL` (USD/TL döviz alış, aylık ortalama). Her ikisi de **Ocak 2003'ten**
-  itibaren mevcuttur. Daha eski yıllar için TÜİK'in farklı bazlı serilerinin (1994=100 vb.)
-  zincirlenmesi gerekir — bu sürümde kapsanmamıştır.
+- **TÜFE zinciri (Ocak 1964 – bugün):** TÜİK, Ocak 2026'da TÜFE'nin temel yılını **2003=100'den
+  2025=100'e** güncelledi; eski `TP.FG.J0` serisi bu tarihte durdu. Uygulama artık 2003=100
+  tabanını sürdüren `TP.GENENDEKS.T1` serisini kullanıyor ve EVDS'deki arşiv serilerini bununla
+  **zincirliyor** (chain-linking — iki serinin çakıştığı ilk ayda oran alınır):
+
+  | Dönem | Seri | Kaynak |
+  |---|---|---|
+  | 1964-01 … 1981-12 | `TP.FG.U63` — İTO İstanbul Ücretliler Geçinme Endeksi | İTO — **tahmini** |
+  | 1982-01 … 2002-12 | `TP.FG.F01` — TÜFE (1978-79=100, arşiv) | TÜİK (resmi) |
+  | 2003-01 … bugün | `TP.GENENDEKS.T1` — TÜFE Genel (2003=100) | TÜİK (resmi) |
+
+  TÜİK'in **aylık** TÜFE'si 1982'de başlar; 1982 öncesi İTO'nun İstanbul endeksiyle uzatılır ve
+  API'de `estimated_start` bayrağıyla, arayüzde de açık bir uyarıyla işaretlenir.
+- **Paradan altı sıfır atılması (2005):** EVDS'nin tüm fiyat serileri **yeni TL** cinsindendir,
+  endeksler ise birimsizdir. Bu yüzden 2005 öncesi bir başlangıç seçildiğinde girilen tutar
+  **eski TL** kabul edilip 1.000.000'a bölünür; sonuç ise **bitiş tarihinin** para biriminde
+  sunulur. Bilgi kutularındaki ham fiyatlar da ait oldukları dönemin parasıyla gösterilir
+  (ör. *1964'te 1 gr altın = 14 TL*, *1 $ = 9 TL*).
+- **Varlıklar:** `TP.DK.USD.A.YTL` (dolar), `TP.DK.EUR.A.YTL` (euro), `TP.MK.KUL.YTL` (gram altın),
+  `TP.MK.CUM.YTL` (Cumhuriyet altını), `TP.MK.F.BILESIK` (BIST 100), `TP.BRENTPETROL.EUBP`
+  (Brent — dolar cinsinden kotalanır, TL fiyatı USD/TL ile çarpılarak bulunur). Ayrıca
+  `TP.MK.LON.YTL` (ons altın, USD) varlığın **kendi** değer değişimini göstermek için çekilir.
+  Bazı seriler TÜFE'den 1-2 ay geriden geldiği için seçilen ayda veri yoksa **en yakın önceki ay**
+  kullanılır (en fazla 6 ay) ve bilgi kutusunda hangi ay olduğu belirtilir.
+- **Diğer endeksler:** `TP.TUFE1YI.T1` (Yurt İçi ÜFE, 1982+), `TP.KFE.TR` (TCMB Konut Fiyat
+  Endeksi, 2010+), `TP.FG.C01` (İTO Toptan Eşya Fiyat Endeksi, 1968+).
 - **"Reel enflasyon" (ENAG):** ENAG'ın herkese açık bir API'si **yoktur** ve resmi sitesi
   (enagrup.org) otomatik erişime kapalıdır (HTTP 525). Bu yüzden ENAG verisi canlı çekilemez;
-  [`app/enag.py`](app/enag.py) içinde **topluluk kaynaklı aylık oranlar** elle tutulur
-  (kaynak: `github.com/muslumyalcin-git/enflasyon-matrix`). Bu ham veri, ENAG'ın geniş kabul
-  gören **yıllık** oranlarına göre yıl bazında **normalize edilir** (2020: %36,72 · 2021: %82,81 ·
-  2022: %137,55 · 2023: %127,21 · 2024: %83,40); böylece her yılın bileşik enflasyonu resmi yıllık
-  rakamla birebir tutar. Çapası olmayan dönemler (2025–2026) ham haliyle kullanılır ve arayüzde
+  [`app/enag.py`](app/enag.py) içinde **aylık oranlar** ENAG'ın basın açıklamalarından derlenerek
+  elle tutulur. Basında bulunamayan aylar, ENAG'ın o ay duyurduğu **12 aylık** orandan geriye doğru
+  türetilir (`m_t = (1+A_t)/(1+A_{t-1}) × (1+m_{t-12}) − 1`; ± ~0,3 puan hassasiyet). Bu ham veri,
+  ENAG'ın geniş kabul gören **yıllık** oranlarına göre yıl bazında **normalize edilir**
+  (2020: %36,72 · 2021: %82,81 · 2022: %137,55 · 2023: %127,21 · 2024: %83,40 · 2025: %56,14);
+  böylece her yılın bileşik enflasyonu resmi yıllık rakamla birebir tutar. Çapası olmayan dönem
+  (içinde bulunulan yıl) ham haliyle kullanılır ve arayüzde
   **"doğrulanmamış"** olarak işaretlenir. ENAG sonucu yalnızca **2020 sonrası** seçimler için
   gösterilir (ENAG Eylül 2020'de kurulduğu için daha eski ENAG verisi yoktur; 2020 Oca–Kas ayları
   doğrulanmış yıllık orana eşit dağıtılmış yaklaşık değerlerdir, Aralık 2020 = %4,08 gerçek değerdir).
   Veriyi güncellemek için `app/enag.py` içindeki `ENAG_MONTHLY_RATES` sözlüğüne yeni ayı ekleyin.
 
-  > ⚠️ **Uyarı:** Ham topluluk verisi, ENAG'ın yıllık oranlarıyla doğrudan tutmuyordu
-  > (2021'de +14, 2024'te −17 puan sapma). Normalizasyon yıl sınırlarındaki doğruluğu garanti eder
-  > ama yıl içi aylık dağılım yine de yaklaşıktır. ENAG sonuçlarını resmi/kesin veri olarak görmeyin.
-- **İTO (İstanbul Ticaret Odası):** Aylık veri 2003'ten beri mevcuttur ancak ham topluluk verisinin
-  mutlak değerleri eski yıllarda resmi TÜFE'den sapıyordu (~%17). Bu yüzden [`app/ito.py`](app/ito.py)
-  **"spread" yöntemini** kullanır: aynı derlemedeki İTO ve TÜİK serilerinin oranı (İTO–TÜİK farkı)
-  alınır ve **resmi TÜFE (EVDS) üzerine uygulanır**. Ortak sapma oranda birbirini götürdüğü için
-  eski yıllardaki hata büyük ölçüde düzelir; resmi TÜFE bel kemiği olarak kalır. İTO da bağımsız/
-  topluluk kaynaklıdır, resmi rakam değildir. (Not: İTO Ocak 2025'te 2023=100 bazına geçti; oranlar
-  baz bağımsız olduğundan hesap etkilenmez.)
+  > ⚠️ **Uyarı:** Normalizasyon yıl sınırlarındaki doğruluğu garanti eder ama yıl içi aylık
+  > dağılım yine de yaklaşıktır. ENAG sonuçlarını resmi/kesin veri olarak görmeyin.
+- **İTO (İstanbul Ticaret Odası):** Artık topluluk verisi kullanılmıyor — İTO'nun *Ücretliler
+  Geçinme Endeksi* (`TP.FG.U63`, **1964'ten** beri kesintisiz) doğrudan **TCMB EVDS'den canlı**
+  çekiliyor ve kendi endeksi olarak kullanılıyor. (Eski sürümdeki `app/ito.py` + `ito_data.json`
+  "spread" yöntemi bu nedenle kaldırıldı.) İTO resmi bir kurum ölçümüdür, ancak **yalnızca
+  İstanbul'u** kapsar — TÜİK'in Türkiye geneli TÜFE'sinin yerine geçmez.
 - **Yabancı enflasyon (dolar/euro'nun kendi enflasyonu):** Dolar ve Euro bilgi kutularında, kurun
   TL karşısındaki artışının (**kur artışı**) yanı sıra o para biriminin **kendi** enflasyonu da
   gösterilir — ör. *"ABD'de fiyatlar bu dönemde ~%75 arttı; yani dolar kendi içinde ~%43 değer
   kaybetti."* [`app/foreign_cpi.py`](app/foreign_cpi.py) **resmi yıllık ortalama** oranları tutar:
-  ABD için **BLS** (CPI-U), Euro Bölgesi için **Eurostat** (HICP). Bu veri **yıl bazlıdır** (aylık
-  değil) — bu yüzden arayüzde **"yaklaşık"** etiketlenir; oranlardan 2003=100 bazlı kümülatif endeks
-  kurulur. 2024 ve öncesi tarihsel kesin, **2025** kesinleşmiş yıllık ortalama, **2026 geçicidir**
-  (yıl tamamlanmadığından o yıl yayımlanan en güncel 12 aylık enflasyon: ABD Nis 2026 %3,8 · Euro B.
-  May 2026 %3,2). Veriyi güncellemek için `foreign_cpi.py` içindeki `_RATES` sözlüğüne ekleyin.
-  **Altın** bu hesaba dâhil değildir (gram altının "kendi" enflasyonu kavramı yoktur).
+  ABD için **BLS** (CPI-U, **1950'den**), Euro Bölgesi için **Eurostat** (HICP, **1997'den**).
+  Bu veri **yıl bazlıdır** (aylık değil) — bu yüzden arayüzde **"yaklaşık"** etiketlenir;
+  oranlardan kümülatif endeks kurulur. 2025 ve öncesi kesinleşmiş yıllık ortalama, **2026
+  geçicidir** (yıl tamamlanmadığından o yıl yayımlanan en güncel 12 aylık enflasyon: ABD Haz 2026
+  %3,5 · Euro B. Haz 2026 %2,8). Veriyi güncellemek için `foreign_cpi.py` içindeki `_RATES`
+  sözlüğüne ekleyin.
+  **Altın ve petrol** için bunun yerine varlığın **dolar cinsinden fiyat değişimi** gösterilir
+  (ons altın `TP.MK.LON.YTL`, varil Brent) — bir emtianın "kendi enflasyonu" kavramı yoktur,
+  ama dolar bazlı seyri TL'nin değer kaybından ayrışmayı gösterir.
 - **Sağlamlık:** EVDS'ye ulaşılamazsa uygulama, elindeki (bayat olsa bile) önbelleğe düşer
   ve arayüzde uygun uyarı gösterir.
 - **CORS gerekmez:** Frontend ve API aynı sunucudan (aynı origin) servis edildiği için
@@ -313,25 +349,27 @@ crontab -e
 
 | Kaynak | Kapsam | Tür |
 |--------|--------|-----|
-| **TCMB EVDS** — TÜFE (`TP.FG.J0`), USD (`TP.DK.USD.A.YTL`), EUR (`TP.DK.EUR.A.YTL`), gram altın (`TP.MK.KUL.YTL`) | 2003+ | Resmi (canlı API) |
-| **ENAG** (Enflasyon Araştırma Grubu) | 2020+ | Bağımsız — topluluk kaynaklı, yıllık orana normalize |
-| **İTO** (İstanbul Ticaret Odası) | 2003+ | Bağımsız — topluluk kaynaklı, spread yöntemiyle |
+| **TCMB EVDS** — TÜFE (`TP.GENENDEKS.T1` + arşiv serileri, zincirlenmiş) | 1964+ (TÜİK: 1982+) | Resmi (canlı API) |
+| **TCMB EVDS** — USD (1960+), EUR (1999+), gram altın (1960+), Cumhuriyet altını (1960+), BIST 100 (1986+), Brent petrol (1987+) | değişken | Resmi (canlı API) |
+| **TCMB EVDS** — Yİ-ÜFE (1982+), Konut Fiyat Endeksi (2010+), İTO Toptan Eşya (1968+) | değişken | Resmi (canlı API) |
+| **İTO** (İstanbul Ticaret Odası) — Ücretliler Geçinme Endeksi (`TP.FG.U63`) | 1964+ | Resmi kurum ölçümü — yalnızca İstanbul |
+| **ENAG** (Enflasyon Araştırma Grubu) | 2020+ | Bağımsız — basın açıklamalarından derlenir, yıllık orana normalize |
 | **Net asgari ücret** (`app/minwage.py`) | 2003+ | Kamuya açık yıllık tablo (Ocak değerleri) |
-| **ABD TÜFE** (BLS, CPI-U) · **Euro Bölgesi HICP** (Eurostat) — `app/foreign_cpi.py` | 2003+ | Resmi yıllık ortalama oranlar (elle tutulur, yıl bazlı/yaklaşık) |
+| **ABD TÜFE** (BLS, CPI-U) · **Euro Bölgesi HICP** (Eurostat) — `app/foreign_cpi.py` | 1950+ / 1997+ | Resmi yıllık ortalama oranlar (elle tutulur, yıl bazlı/yaklaşık) |
 
-ENAG ve İTO için kullanılan aylık veriler topluluk derlemesinden alınmıştır
-([github.com/muslumyalcin-git/enflasyon-matrix](https://github.com/muslumyalcin-git/enflasyon-matrix));
-ENAG yıllık çapaları için kamuya açık ENAG rakamları kullanılmıştır.
+ENAG aylık oranları ve yıllık çapaları için ENAG'ın kamuya açık açıklamaları kullanılmıştır.
 
-> ⚠️ **Sorumluluk reddi:** Bu uygulama yalnızca **bilgilendirme/eğitim** amaçlıdır. ENAG ve İTO
-> sonuçları bağımsız/topluluk kaynaklı tahminlerdir, resmi rakam değildir ve doğruluğu garanti
-> edilmez. Yatırım veya hukuki kararlar için resmi TÜİK/TCMB verilerini esas alın.
+> ⚠️ **Sorumluluk reddi:** Bu uygulama yalnızca **bilgilendirme/eğitim** amaçlıdır. ENAG sonuçları
+> bağımsız tahminlerdir, İTO yalnızca İstanbul'u kapsar ve 1982 öncesi TÜFE tahminidir — hiçbiri
+> TÜİK'in resmi Türkiye enflasyonu değildir ve doğruluğu garanti edilmez. Yatırım veya hukuki
+> kararlar için resmi TÜİK/TCMB verilerini esas alın.
 
 ## 🤝 Katkı
 
-Katkılar memnuniyetle karşılanır. ENAG/İTO verisini güncellemek için
-[`app/enag.py`](app/enag.py) ve [`app/data/ito_data.json`](app/data/ito_data.json) dosyalarını
-düzenleyebilirsiniz. Hata bildirimi ve öneriler için issue açabilirsiniz.
+Katkılar memnuniyetle karşılanır. ENAG verisini güncellemek için
+[`app/enag.py`](app/enag.py), asgari ücret için [`app/minwage.py`](app/minwage.py), yabancı
+enflasyon için [`app/foreign_cpi.py`](app/foreign_cpi.py) dosyalarını düzenleyebilirsiniz
+(diğer tüm veriler EVDS'den canlı gelir). Hata bildirimi ve öneriler için issue açabilirsiniz.
 
 ## 📄 Lisans
 
