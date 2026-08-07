@@ -175,10 +175,12 @@
             · endeks <span id="resultIndices" class="font-600 text-ink">—</span>
           </p>
 
-          <!-- Zaman serisi grafiği — fareyle gezinince değer balonu, sürükleyince aralık seçimi -->
+          <!-- Zaman serisi grafiği — fareyle gezinince değer balonu,
+               sürükleyince seçilen aralıktaki değişim -->
           <div class="mt-3">
             <div id="chartLegend" class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]"></div>
-            <div id="chartBox" class="chart-box mt-1">
+            <div id="chartBox" class="chart-box mt-1"
+              title="Ayrıntı için üzerine gelin · iki tarih arasındaki değişim için sürükleyin">
               <div id="chart"></div>
               <div id="chartBand" class="chart-band hidden"></div>
               <div id="chartCursor" class="chart-cursor hidden"></div>
@@ -187,10 +189,7 @@
             </div>
             <div class="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-ink-soft">
               <span id="chartStart"></span>
-              <span class="flex items-center gap-2">
-                <span id="chartScaleNote" class="hidden opacity-70">logaritmik ölçek</span>
-                <button id="chartReset" type="button" class="chart-reset hidden">↺ tüm dönem</button>
-              </span>
+              <span id="chartScaleNote" class="hidden opacity-70">logaritmik ölçek</span>
               <span id="chartEnd"></span>
             </div>
           </div>

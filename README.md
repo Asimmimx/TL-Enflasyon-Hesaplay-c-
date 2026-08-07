@@ -39,8 +39,9 @@ Veriler **TCMB EVDS** (Elektronik Veri Dağıtım Sistemi) servisinden otomatik 
   **logaritmik eksene** geçer, böylece 60 yıllık dönemler de okunabilir kalır.
   - **Fareyle gezinince** dikey kılavuz çizgi, çizgilerin üzerinde nokta işaretleri ve o aya ait
     tüm değerleri gösteren bir balon çıkar.
-  - **Sürükleyerek** bir aralık seçilir; bırakınca grafik o döneme yakınlaşır (eksen ve açıklama
-    satırı seçilen aralığa göre yeniden hesaplanır). **↺ tüm dönem** ile geri dönülür.
+  - **Sürükleyerek** iki tarih arası seçilir: seçim kesikli iki uç çizgi ve gölgeli alanla
+    gösterilir, üstteki kutuda o aralıktaki **değişim** (fark + yüzde, her seri için ayrı ayrı)
+    yazar. Tek tıklama seçimi temizler. Grafik yakınlaşmaz — tüm dönem hep görünür kalır.
   - Dokunmatik cihazlarda da çalışır; dikey sayfa kaydırması engellenmez (`touch-action: pan-y`).
 - 👷 **Asgari ücret karşılaştırması:** "Bu tutar o tarihte kaç net asgari ücretti, bugün kaç?"
 - ℹ️ **"Nasıl hesaplandı?" bilgi kutuları:** her karşılaştırma kartının sağ alt köşesindeki **ⓘ**

@@ -225,7 +225,8 @@ function renderResult(amount, payload, data) {
   el('resultIndices').textContent = `${fmtIndex(data.start_index)} → ${fmtIndex(data.end_index)}`;
 
   // Grafik + açıklama (TÜFE / ENAG / İTO)
-  // Yeni hesaplama: grafik her zaman tam dönemle açılır (varsa önceki yakınlaştırma düşer).
+  // Yeni hesaplama: önceki aralık seçimi artık geçersiz.
+  clearChartSelection();
   drawChart(data.series);
 
   // Birim bazında karşılaştırmalar
@@ -552,22 +553,13 @@ const CHART = { W: 600, H: 140, padT: 6, padB: 6, padX: 2 };
 // Fare etkileşimi ve yakınlaştırma bunun üzerinden çalışır.
 let chartView = null;
 
-function drawChart(series, from, to) {
+function drawChart(series) {
   const c = el('chart');
-  const reset = () => { c.innerHTML = ''; chartView = null; hideChartCursor(); };
+  const reset = () => { c.innerHTML = ''; chartView = null; clearChartSelection(); hideChartCursor(); };
   if (!series || !series.labels || series.labels.length === 0) { reset(); return; }
 
-  const total = series.labels.length;
-  let lo = Math.max(0, from ?? 0);
-  let hi = Math.min(total - 1, to ?? total - 1);
-  if (hi - lo < 1) { lo = 0; hi = total - 1; }
-
-  const labels = series.labels.slice(lo, hi + 1);
-  const lines = {
-    tufe: series.tufe ? series.tufe.slice(lo, hi + 1) : null,
-    enag: series.enag ? series.enag.slice(lo, hi + 1) : null,
-    ito: series.ito ? series.ito.slice(lo, hi + 1) : null,
-  };
+  const labels = series.labels;
+  const lines = { tufe: series.tufe, enag: series.enag, ito: series.ito };
   const vals = [];
   for (const k in lines) if (lines[k]) lines[k].forEach((x) => { if (x != null) vals.push(x); });
   if (vals.length === 0) { reset(); return; }
@@ -601,23 +593,26 @@ function drawChart(series, from, to) {
   svg += '</svg>';
   c.innerHTML = svg;
 
-  chartView = { series, lo, hi, labels, lines, n, X, Y, colors: SC };
+  chartView = { series, labels, lines, n, X, Y, colors: SC };
   el('chartStart').textContent = monthShort(labels[0]);
   el('chartEnd').textContent = monthShort(labels[n - 1]);
-  el('chartReset').classList.toggle('hidden', lo === 0 && hi === total - 1);
   hideChartCursor();
   renderChartLegend();
+  // Seçim varsa (ör. tema değişip yeniden çizildiyse) konumunu tazele.
+  if (chartSel) showChartRange(chartSel.from, chartSel.to);
 }
 
-// Görünen aralığı koruyarak yeniden çizer (tema değişimi, yeniden boyutlandırma).
+// Aynı seriyi yeniden çizer (tema değişimi). Seçim korunur.
 function redrawChart() {
-  if (chartView) drawChart(chartView.series, chartView.lo, chartView.hi);
+  if (chartView) drawChart(chartView.series);
 }
 
-// ---------- Grafik etkileşimi (imleç · değer balonu · sürükleyerek yakınlaştırma) ----------
+// ---------- Grafik etkileşimi (imleç · değer balonu · sürükleyerek aralık değişimi) ----------
 
 // Sürükleme durumu: basıldığı andaki indeks (null ise sürükleme yok).
 let chartDragFrom = null;
+// Sürükleme bittikten sonra ekranda kalan seçim: { from, to } (yoksa null).
+let chartSel = null;
 
 // Fare/dokunma konumundan görünen seriye ait indeksi bulur.
 function chartIndexAt(clientX) {
@@ -679,17 +674,63 @@ function showChartCursor(i) {
 
 function hideChartCursor() {
   el('chartCursor').classList.add('hidden');
-  el('chartTip').classList.add('hidden');
   el('chartDots').innerHTML = '';
+  if (!chartSel) el('chartTip').classList.add('hidden');
 }
 
-function updateChartBand(a, b) {
+// Seçilen aralığı (kesikli iki uç + gölgeli alan) çizer ve o aralıktaki değişimi
+// özetler: her seri için baştan sona fark ve yüzde. Google'ın kur grafiğindeki gibi.
+function showChartRange(a, b) {
+  if (!chartView) return;
+  const from = Math.min(a, b);
+  const to = Math.max(a, b);
+  if (from < 0 || to >= chartView.n) { clearChartSelection(); return; }
+  const rect = el('chartBox').getBoundingClientRect();
+  const x1 = chartPixelX(from);
+  const x2 = chartPixelX(to);
+
   const band = el('chartBand');
-  const x1 = chartPixelX(Math.min(a, b));
-  const x2 = chartPixelX(Math.max(a, b));
   band.style.left = `${x1}px`;
   band.style.width = `${Math.max(1, x2 - x1)}px`;
   band.classList.remove('hidden');
+
+  const dots = [];
+  const rows = [];
+  for (const key of ['tufe', 'enag', 'ito']) {
+    const arr = chartView.lines[key];
+    const v1 = arr ? arr[from] : null;
+    const v2 = arr ? arr[to] : null;
+    if (v1 == null || v2 == null) continue;
+    const color = chartView.colors[key];
+    dots.push(`<span class="chart-dot" style="left:${x1}px;top:${chartView.Y(v1)}px;background:${color}"></span>`);
+    dots.push(`<span class="chart-dot" style="left:${x2}px;top:${chartView.Y(v2)}px;background:${color}"></span>`);
+    const diff = v2 - v1;
+    const pct = (v2 / v1 - 1) * 100;
+    const up = diff >= 0;
+    rows.push(
+      `<div class="chart-tip-row"><span class="dot" style="background:${color}"></span>` +
+      `<span>${CHART_SERIES_LABELS[key]}</span>` +
+      `<span class="val">${up ? '+' : '−'}${tlFormatter.format(Math.abs(diff))}</span>` +
+      `<span class="chg ${up ? 'up' : 'down'}">${up ? '▲' : '▼'} ${fmtChange(Math.abs(pct))}</span></div>`);
+  }
+  el('chartDots').innerHTML = dots.join('');
+  el('chartCursor').classList.add('hidden');
+
+  const tip = el('chartTip');
+  tip.innerHTML =
+    `<p class="chart-tip-date">${monthShort(chartView.labels[from])} → ${monthShort(chartView.labels[to])}</p>` +
+    rows.join('');
+  tip.classList.remove('hidden');
+  const tw = tip.offsetWidth;
+  tip.style.left = `${Math.max(0, Math.min(x1, rect.width - tw))}px`;
+  tip.style.top = '4px';
+}
+
+function clearChartSelection() {
+  chartSel = null;
+  el('chartBand').classList.add('hidden');
+  el('chartTip').classList.add('hidden');
+  el('chartDots').innerHTML = '';
 }
 
 function bindChartInteraction() {
@@ -698,21 +739,21 @@ function bindChartInteraction() {
   box.addEventListener('pointermove', (e) => {
     const i = chartIndexAt(e.clientX);
     if (i == null) return;
-    showChartCursor(i);
-    if (chartDragFrom != null) updateChartBand(chartDragFrom, i);
+    if (chartDragFrom != null) showChartRange(chartDragFrom, i);
+    else if (!chartSel) showChartCursor(i);
   });
 
   box.addEventListener('pointerleave', () => {
-    if (chartDragFrom == null) hideChartCursor();
+    if (chartDragFrom == null && !chartSel) hideChartCursor();
   });
 
   box.addEventListener('pointerdown', (e) => {
     const i = chartIndexAt(e.clientX);
     if (i == null) return;
+    clearChartSelection();
     chartDragFrom = i;
     // Kutu dışına sürüklense de olayları almaya devam et (yakalama desteklenmeyebilir).
     try { box.setPointerCapture(e.pointerId); } catch (_) { /* yoksay */ }
-    updateChartBand(i, i);
   });
 
   const finish = (e) => {
@@ -720,20 +761,19 @@ function bindChartInteraction() {
     const i = chartIndexAt(e.clientX);
     const from = chartDragFrom;
     chartDragFrom = null;
-    el('chartBand').classList.add('hidden');
-    // En az 2 ay seçilmediyse bunu tıklama say — yanlışlıkla yakınlaşma olmasın.
-    if (i == null || Math.abs(i - from) < 2 || !chartView) return;
-    const { series, lo } = chartView;
-    drawChart(series, lo + Math.min(from, i), lo + Math.max(from, i));
+    // Tek aya basmak seçim sayılmaz; seçimi temizleyip normal gezinmeye dön.
+    if (i == null || Math.abs(i - from) < 1) {
+      clearChartSelection();
+      if (i != null) showChartCursor(i);
+      return;
+    }
+    chartSel = { from: Math.min(from, i), to: Math.max(from, i) };
+    showChartRange(chartSel.from, chartSel.to);
   };
   box.addEventListener('pointerup', finish);
   box.addEventListener('pointercancel', () => {
     chartDragFrom = null;
-    el('chartBand').classList.add('hidden');
-  });
-
-  el('chartReset').addEventListener('click', () => {
-    if (chartView) drawChart(chartView.series);
+    clearChartSelection();
   });
 }
 

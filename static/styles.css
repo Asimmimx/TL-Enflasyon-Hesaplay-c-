@@ -184,14 +184,14 @@ body { transition: background-color 0.25s ease, color 0.25s ease; }
 }
 .chart-cursor.hidden { display: none; }
 
-/* Sürükleyerek seçilen aralık */
+/* Sürükleyerek seçilen aralık — iki ucu kesikli çizgi, arası hafif gölgeli */
 .chart-band {
   position: absolute;
   top: 0;
   bottom: 0;
-  background: rgb(var(--c-ink) / 0.1);
-  border-left: 1px solid rgb(var(--c-ink) / 0.35);
-  border-right: 1px solid rgb(var(--c-ink) / 0.35);
+  background: rgb(var(--c-ink) / 0.08);
+  border-left: 1px dashed rgb(var(--c-ink) / 0.55);
+  border-right: 1px dashed rgb(var(--c-ink) / 0.55);
   pointer-events: none;
 }
 .chart-band.hidden { display: none; }
@@ -228,20 +228,13 @@ body { transition: background-color 0.25s ease, color 0.25s ease; }
 .chart-tip-row { display: flex; align-items: center; gap: 0.4rem; }
 .chart-tip-row .dot { height: 0.4rem; width: 0.4rem; border-radius: 9999px; flex: none; }
 .chart-tip-row .val { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+/* Aralık özetinde değişim yüzdesi, değerin sağına ikinci sütun olarak gelir */
+.chart-tip-row .chg { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 4.2rem; text-align: right; }
+.chart-tip-row .chg.up { color: rgb(var(--c-up)); }
+.chart-tip-row .chg.down { color: rgb(var(--c-down)); }
 
-/* Yakınlaştırmayı sıfırlama düğmesi — satır yüksekliğini büyütmemeli (tek ekran düzeni) */
-.chart-reset {
-  border: 1px solid rgb(var(--c-line));
-  border-radius: 0.3rem;
-  padding: 0 0.35rem;
-  line-height: 1.35;
-  font-weight: 600;
-  color: rgb(var(--c-ink-soft));
-  cursor: pointer;
-  transition: color 0.15s, border-color 0.15s;
-}
-.chart-reset:hover { color: rgb(var(--c-ink)); border-color: rgb(var(--c-ink)); }
-.chart-reset.hidden { display: none; }
+/* Aralık seçiliyken ipucu metni */
+.chart-hint { color: rgb(var(--c-ink-soft)); }
 
 /* ---------- "Daha fazla" açılır bölümü ---------- */
 .more-toggle {
