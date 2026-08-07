@@ -225,10 +225,8 @@ function renderResult(amount, payload, data) {
   el('resultIndices').textContent = `${fmtIndex(data.start_index)} → ${fmtIndex(data.end_index)}`;
 
   // Grafik + açıklama (TÜFE / ENAG / İTO)
-  renderChartLegend(data);
+  // Yeni hesaplama: grafik her zaman tam dönemle açılır (varsa önceki yakınlaştırma düşer).
   drawChart(data.series);
-  el('chartStart').textContent = monthShort(data.start_key);
-  el('chartEnd').textContent = monthShort(data.end_key);
 
   // Birim bazında karşılaştırmalar
   const a = data.assets || {};
@@ -264,22 +262,23 @@ function renderResult(amount, payload, data) {
     `<span>${notes.join(' ')}</span></span>`;
 }
 
-function renderChartLegend(data) {
-  // Çizilen serilerle birebir uyumlu olsun diye değerleri series'in son noktasından al.
-  const s = data.series || {};
+// Açıklama satırı, çizilen serilerle birebir uyumlu olsun diye değerleri
+// GÖRÜNEN aralığın son noktasından alır (yakınlaştırma yapılmışsa o aralığın sonu).
+function renderChartLegend() {
+  if (!chartView) { el('chartLegend').innerHTML = ''; return; }
   const lastVal = (arr) => {
     if (!arr) return null;
     for (let i = arr.length - 1; i >= 0; i--) if (arr[i] != null) return arr[i];
     return null;
   };
-  const SC = seriesColors();
+  const { lines, colors } = chartView;
   const items = [];
-  const t = lastVal(s.tufe);
-  if (t != null) items.push({ label: 'TÜFE', color: SC.tufe, val: t });
-  const e = lastVal(s.enag);
-  if (e != null) items.push({ label: 'ENAG*', color: SC.enag, val: e });
-  const i = lastVal(s.ito);
-  if (i != null) items.push({ label: 'İTO*', color: SC.ito, val: i });
+  const t = lastVal(lines.tufe);
+  if (t != null) items.push({ label: 'TÜFE', color: colors.tufe, val: t });
+  const e = lastVal(lines.enag);
+  if (e != null) items.push({ label: 'ENAG*', color: colors.enag, val: e });
+  const i = lastVal(lines.ito);
+  if (i != null) items.push({ label: 'İTO*', color: colors.ito, val: i });
 
   el('chartLegend').innerHTML = items.map((it) =>
     `<span class="inline-flex items-center gap-1.5"><span class="h-2 w-2 rounded-full" style="background:${it.color}"></span>` +
@@ -287,21 +286,37 @@ function renderChartLegend(data) {
   ).join('');
 }
 
+// Birim sayısı biçimi. Değer aralığı çok geniştir (0,0603 adet ↔ 10.638.298 adet);
+// büyük sayılarda ondalık atılır, küçük sayılarda anlamlı basamak korunur — böylece
+// metin chip'e sığar ve bilgi kaybolmaz.
+const intFormatter = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 0 });
+function fmtUnitValue(v) {
+  const abs = Math.abs(v);
+  if (abs >= 1000) return intFormatter.format(v);
+  if (abs >= 1) return numFormatter.format(v);
+  return smallNumFormatter.format(v);
+}
+
 // Varlığın "kaç birim" biçimi: altın gram, dolar/euro sembol önde, diğerleri birim sonda.
 function unitFormatter(asset) {
-  if (asset.kind === 'currency') return (x) => `${asset.symbol}${numFormatter.format(x)}`;
-  return (x) => `${numFormatter.format(x)} ${asset.symbol}`;
+  if (asset.kind === 'currency') return (x) => `${asset.symbol}${fmtUnitValue(x)}`;
+  return (x) => `${fmtUnitValue(x)} ${asset.symbol}`;
 }
+
+// Chip içinde satır sonuna denk gelen değerin biriminden ("150,78" / "adet") kopmasını önler.
+const nowrap = (s) => `<span class="whitespace-nowrap">${s}</span>`;
 
 function assetChipInner(asset, ctx) {
   const fmt = unitFormatter(asset);
   const pos = asset.change_pct >= 0;
+  // truncate + shrink-0: uzun etiket ("Cumhuriyet altını") yüzdeyi dışarı itmesin.
+  // break-words: uzun birim sayıları chip'ten taşmak yerine alt satıra insin.
   return (
-    `<div class="flex items-center justify-between text-[12px]">
-       <span class="font-600">${asset.label}</span>
-       <span class="font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${fmtChangeSigned(asset.change_pct)}</span>
+    `<div class="flex items-center justify-between gap-1.5 text-[12px]">
+       <span class="truncate font-600">${asset.label}</span>
+       <span class="shrink-0 font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${fmtChangeSigned(asset.change_pct)}</span>
      </div>
-     <div class="mt-0.5 pr-7 text-[13px] tabular-nums">${fmt(asset.unit_start)} <span class="text-ink-soft">→</span> ${fmt(asset.unit_end)}</div>` +
+     <div class="mt-0.5 break-words pr-7 text-[13px] tabular-nums">${nowrap(fmt(asset.unit_start))} <span class="text-ink-soft">→</span> ${nowrap(fmt(asset.unit_end))}</div>` +
     chipInfoBlock(assetPopHTML(asset, ctx))
   );
 }
@@ -344,6 +359,11 @@ function setMoreOpen(open) {
   el('moreSection').classList.toggle('hidden', !open);
   el('moreToggle').setAttribute('aria-expanded', String(open));
   el('moreToggleText').textContent = open ? 'Gizle' : 'Diğer varlıklar ve göstergeler';
+  // Açılan bölüm ekranın altında kalabilir; görünür alana kaydır.
+  if (open) {
+    requestAnimationFrame(() =>
+      el('moreSection').scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+  }
 }
 
 function renderMinwageChip(m, payload, ctx) {
@@ -357,11 +377,11 @@ function renderMinwageChip(m, payload, ctx) {
     ? `<div class="mt-0.5 pr-7 text-[11px] tabular-nums text-ink-soft">${payload.start_year}: ${tlFormatter.format(m.wage_start)} <span>→</span> ${payload.end_year}: ${tlFormatter.format(m.wage_end)} <span class="not-italic">(yıl başı net)</span></div>`
     : '';
   chip.innerHTML =
-    `<div class="flex items-center justify-between text-[12px]">
-       <span class="font-600">Asgari ücret</span>
-       <span class="font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${fmtChangeSigned(m.change_pct)}</span>
+    `<div class="flex items-center justify-between gap-1.5 text-[12px]">
+       <span class="truncate font-600">Asgari ücret</span>
+       <span class="shrink-0 font-700 tabular-nums ${pos ? 'text-up' : 'text-down'}">${fmtChangeSigned(m.change_pct)}</span>
      </div>
-     <div class="mt-0.5 ${hasWages ? '' : 'pr-7 '}text-[13px] tabular-nums">${numFormatter.format(m.ratio_start)} <span class="text-ink-soft">→</span> ${numFormatter.format(m.ratio_end)} maaş</div>
+     <div class="mt-0.5 break-words ${hasWages ? '' : 'pr-7 '}text-[13px] tabular-nums">${nowrap(fmtUnitValue(m.ratio_start))} <span class="text-ink-soft">→</span> ${nowrap(fmtUnitValue(m.ratio_end) + ' maaş')}</div>
      ${wageLine}` +
     (hasWages ? chipInfoBlock(minwagePopHTML(m, ctx)) : '');
 }
@@ -523,18 +543,40 @@ function chartScale(vals) {
   return (v) => (v - min) / ((max - min) || 1);
 }
 
-function drawChart(series) {
+// Grafiğin ölçüleri (SVG viewBox birimleri). Yükseklik piksel yüksekliğine eşittir,
+// genişlik ise preserveAspectRatio="none" ile kutuya yayılır — imleç eşlemesinde
+// bu yüzden yatayda oran, dikeyde doğrudan piksel kullanılır.
+const CHART = { W: 600, H: 140, padT: 6, padB: 6, padX: 2 };
+
+// O an çizili olan görünüm: tam seri + görünen aralık + eksen fonksiyonları.
+// Fare etkileşimi ve yakınlaştırma bunun üzerinden çalışır.
+let chartView = null;
+
+function drawChart(series, from, to) {
   const c = el('chart');
-  if (!series || !series.labels || series.labels.length === 0) { c.innerHTML = ''; return; }
-  const lines = { tufe: series.tufe, enag: series.enag, ito: series.ito };
+  const reset = () => { c.innerHTML = ''; chartView = null; hideChartCursor(); };
+  if (!series || !series.labels || series.labels.length === 0) { reset(); return; }
+
+  const total = series.labels.length;
+  let lo = Math.max(0, from ?? 0);
+  let hi = Math.min(total - 1, to ?? total - 1);
+  if (hi - lo < 1) { lo = 0; hi = total - 1; }
+
+  const labels = series.labels.slice(lo, hi + 1);
+  const lines = {
+    tufe: series.tufe ? series.tufe.slice(lo, hi + 1) : null,
+    enag: series.enag ? series.enag.slice(lo, hi + 1) : null,
+    ito: series.ito ? series.ito.slice(lo, hi + 1) : null,
+  };
   const vals = [];
   for (const k in lines) if (lines[k]) lines[k].forEach((x) => { if (x != null) vals.push(x); });
-  if (vals.length === 0) { c.innerHTML = ''; return; }
+  if (vals.length === 0) { reset(); return; }
 
   const SC = seriesColors();
   const scale = chartScale(vals);
   el('chartScaleNote').classList.toggle('hidden', !scale.log);
-  const W = 600, H = 140, padT = 6, padB = 6, padX = 2, n = series.labels.length;
+  const { W, H, padT, padB, padX } = CHART;
+  const n = labels.length;
   const X = (i) => padX + (W - 2 * padX) * (n <= 1 ? 0.5 : i / (n - 1));
   const Y = (val) => padT + (H - padT - padB) * (1 - scale(val));
   const dpath = (arr) => {
@@ -558,6 +600,141 @@ function drawChart(series) {
   }
   svg += '</svg>';
   c.innerHTML = svg;
+
+  chartView = { series, lo, hi, labels, lines, n, X, Y, colors: SC };
+  el('chartStart').textContent = monthShort(labels[0]);
+  el('chartEnd').textContent = monthShort(labels[n - 1]);
+  el('chartReset').classList.toggle('hidden', lo === 0 && hi === total - 1);
+  hideChartCursor();
+  renderChartLegend();
+}
+
+// Görünen aralığı koruyarak yeniden çizer (tema değişimi, yeniden boyutlandırma).
+function redrawChart() {
+  if (chartView) drawChart(chartView.series, chartView.lo, chartView.hi);
+}
+
+// ---------- Grafik etkileşimi (imleç · değer balonu · sürükleyerek yakınlaştırma) ----------
+
+// Sürükleme durumu: basıldığı andaki indeks (null ise sürükleme yok).
+let chartDragFrom = null;
+
+// Fare/dokunma konumundan görünen seriye ait indeksi bulur.
+function chartIndexAt(clientX) {
+  if (!chartView) return null;
+  const rect = el('chartBox').getBoundingClientRect();
+  if (!rect.width) return null;
+  const { W, padX } = CHART;
+  // Yatayda SVG kutuya yayıldığı için oransal eşleme yapılır; padX payı da hesaba katılır.
+  const plot = (W - 2 * padX) / W;
+  const ratio = ((clientX - rect.left) / rect.width - padX / W) / plot;
+  const i = Math.round(ratio * (chartView.n - 1));
+  return Math.max(0, Math.min(chartView.n - 1, i));
+}
+
+// Bir indeksin kutu içindeki piksel x konumu.
+function chartPixelX(i) {
+  const rect = el('chartBox').getBoundingClientRect();
+  return (chartView.X(i) / CHART.W) * rect.width;
+}
+
+const CHART_SERIES_LABELS = { tufe: 'TÜFE', enag: 'ENAG', ito: 'İTO' };
+
+// İmleci, nokta işaretlerini ve değer balonunu verilen indekse taşır.
+function showChartCursor(i) {
+  if (!chartView) return;
+  const box = el('chartBox');
+  const rect = box.getBoundingClientRect();
+  const x = chartPixelX(i);
+
+  const cursor = el('chartCursor');
+  cursor.style.left = `${x}px`;
+  cursor.classList.remove('hidden');
+
+  // Noktalar
+  const dots = [];
+  const rows = [];
+  for (const key of ['tufe', 'enag', 'ito']) {
+    const arr = chartView.lines[key];
+    const val = arr ? arr[i] : null;
+    if (val == null) continue;
+    const color = chartView.colors[key];
+    dots.push(`<span class="chart-dot" style="left:${x}px;top:${chartView.Y(val)}px;background:${color}"></span>`);
+    rows.push(
+      `<div class="chart-tip-row"><span class="dot" style="background:${color}"></span>` +
+      `<span>${CHART_SERIES_LABELS[key]}</span><span class="val">${tlFormatter.format(val)}</span></div>`);
+  }
+  el('chartDots').innerHTML = dots.join('');
+
+  const tip = el('chartTip');
+  tip.innerHTML = `<p class="chart-tip-date">${monthShort(chartView.labels[i])}</p>${rows.join('')}`;
+  tip.classList.remove('hidden');
+  // Balonu imlecin yanına koy, kutunun dışına taşarsa diğer tarafa çevir.
+  const tw = tip.offsetWidth;
+  let left = x + 12;
+  if (left + tw > rect.width) left = x - 12 - tw;
+  tip.style.left = `${Math.max(0, Math.min(left, rect.width - tw))}px`;
+  tip.style.top = '4px';
+}
+
+function hideChartCursor() {
+  el('chartCursor').classList.add('hidden');
+  el('chartTip').classList.add('hidden');
+  el('chartDots').innerHTML = '';
+}
+
+function updateChartBand(a, b) {
+  const band = el('chartBand');
+  const x1 = chartPixelX(Math.min(a, b));
+  const x2 = chartPixelX(Math.max(a, b));
+  band.style.left = `${x1}px`;
+  band.style.width = `${Math.max(1, x2 - x1)}px`;
+  band.classList.remove('hidden');
+}
+
+function bindChartInteraction() {
+  const box = el('chartBox');
+
+  box.addEventListener('pointermove', (e) => {
+    const i = chartIndexAt(e.clientX);
+    if (i == null) return;
+    showChartCursor(i);
+    if (chartDragFrom != null) updateChartBand(chartDragFrom, i);
+  });
+
+  box.addEventListener('pointerleave', () => {
+    if (chartDragFrom == null) hideChartCursor();
+  });
+
+  box.addEventListener('pointerdown', (e) => {
+    const i = chartIndexAt(e.clientX);
+    if (i == null) return;
+    chartDragFrom = i;
+    // Kutu dışına sürüklense de olayları almaya devam et (yakalama desteklenmeyebilir).
+    try { box.setPointerCapture(e.pointerId); } catch (_) { /* yoksay */ }
+    updateChartBand(i, i);
+  });
+
+  const finish = (e) => {
+    if (chartDragFrom == null) return;
+    const i = chartIndexAt(e.clientX);
+    const from = chartDragFrom;
+    chartDragFrom = null;
+    el('chartBand').classList.add('hidden');
+    // En az 2 ay seçilmediyse bunu tıklama say — yanlışlıkla yakınlaşma olmasın.
+    if (i == null || Math.abs(i - from) < 2 || !chartView) return;
+    const { series, lo } = chartView;
+    drawChart(series, lo + Math.min(from, i), lo + Math.max(from, i));
+  };
+  box.addEventListener('pointerup', finish);
+  box.addEventListener('pointercancel', () => {
+    chartDragFrom = null;
+    el('chartBand').classList.add('hidden');
+  });
+
+  el('chartReset').addEventListener('click', () => {
+    if (chartView) drawChart(chartView.series);
+  });
 }
 
 // ---------- Dışa aktarma (paylaş / görseli indir) ----------
@@ -952,6 +1129,9 @@ amountInput.addEventListener('blur', () => {
 el('moreToggle').addEventListener('click', () =>
   setMoreOpen(el('moreToggle').getAttribute('aria-expanded') !== 'true'));
 
+// Grafik etkileşimi (imleç · değer balonu · sürükleyerek yakınlaştırma)
+bindChartInteraction();
+
 // Yıllara göre enflasyon tablosu
 el('yearlyBtn').addEventListener('click', openYearlyModal);
 el('yearlyClose').addEventListener('click', closeYearlyModal);
@@ -991,9 +1171,7 @@ document.addEventListener('click', (e) => {
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeAllChipPops(); });
 
 // Site teması değişince (düğme ya da sistem) açıktaki sonucun grafiğini yeniden renklendir.
-const _themeObserver = new MutationObserver(() => {
-  if (lastResult) { renderChartLegend(lastResult.data); drawChart(lastResult.data.series); }
-});
+const _themeObserver = new MutationObserver(redrawChart);
 _themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
 
 init();

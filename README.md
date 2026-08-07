@@ -34,9 +34,14 @@ Veriler **TCMB EVDS** (Elektronik Veri Dağıtım Sistemi) servisinden otomatik 
   bitişteki birim karşılığı (TCMB verileriyle).
 - 🏗️ **Diğer fiyat endeksleri:** Yurt İçi ÜFE (üretici fiyatları), TCMB Konut Fiyat Endeksi ve
   İTO Toptan Eşya Fiyat Endeksi — seçilen dönemdeki toplam değişimleriyle.
-- 📉 **Zaman serisi grafiği:** tutarın değerinin aylar boyunca seyri; TÜFE, ENAG ve İTO çizgileri
-  bir arada (hafif, bağımsız SVG — ek bağımlılık yok). Değer aralığı 100 katı aşınca
+- 📉 **Etkileşimli zaman serisi grafiği:** tutarın değerinin aylar boyunca seyri; TÜFE, ENAG ve İTO
+  çizgileri bir arada (hafif, bağımsız SVG — ek bağımlılık yok). Değer aralığı 100 katı aşınca
   **logaritmik eksene** geçer, böylece 60 yıllık dönemler de okunabilir kalır.
+  - **Fareyle gezinince** dikey kılavuz çizgi, çizgilerin üzerinde nokta işaretleri ve o aya ait
+    tüm değerleri gösteren bir balon çıkar.
+  - **Sürükleyerek** bir aralık seçilir; bırakınca grafik o döneme yakınlaşır (eksen ve açıklama
+    satırı seçilen aralığa göre yeniden hesaplanır). **↺ tüm dönem** ile geri dönülür.
+  - Dokunmatik cihazlarda da çalışır; dikey sayfa kaydırması engellenmez (`touch-action: pan-y`).
 - 👷 **Asgari ücret karşılaştırması:** "Bu tutar o tarihte kaç net asgari ücretti, bugün kaç?"
 - ℹ️ **"Nasıl hesaplandı?" bilgi kutuları:** her karşılaştırma kartının sağ alt köşesindeki **ⓘ**
   düğmesine basınca açılan kutuda; o tarihteki **ham değerler** (ör. *1 gr altın = ₺14 → ₺6.741,91*

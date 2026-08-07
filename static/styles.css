@@ -162,6 +162,87 @@ body { transition: background-color 0.25s ease, color 0.25s ease; }
 .stat-value { font-size: 1.05rem; font-weight: 700; font-variant-numeric: tabular-nums; }
 .stat-sub { font-size: 10.5px; color: rgb(var(--c-ink-soft)); font-variant-numeric: tabular-nums; }
 
+/* ---------- Etkileşimli grafik (imleç · değer balonu · aralık seçimi) ---------- */
+.chart-box {
+  position: relative;
+  /* Dikey kaydırma serbest kalsın; yatay sürükleme aralık seçimi için bize gelsin. */
+  touch-action: pan-y;
+  cursor: crosshair;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.chart-box svg { display: block; }
+
+/* Fare konumundaki dikey kılavuz çizgi */
+.chart-cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgb(var(--c-ink) / 0.35);
+  pointer-events: none;
+}
+.chart-cursor.hidden { display: none; }
+
+/* Sürükleyerek seçilen aralık */
+.chart-band {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  background: rgb(var(--c-ink) / 0.1);
+  border-left: 1px solid rgb(var(--c-ink) / 0.35);
+  border-right: 1px solid rgb(var(--c-ink) / 0.35);
+  pointer-events: none;
+}
+.chart-band.hidden { display: none; }
+
+/* Çizgilerin üzerindeki nokta işaretleri */
+.chart-dots { position: absolute; inset: 0; pointer-events: none; }
+.chart-dot {
+  position: absolute;
+  height: 7px;
+  width: 7px;
+  margin: -3.5px 0 0 -3.5px;
+  border-radius: 9999px;
+  border: 2px solid rgb(var(--c-card));
+  box-shadow: 0 0 0 1px rgb(var(--c-ink) / 0.15);
+}
+
+/* Değer balonu */
+.chart-tip {
+  position: absolute;
+  z-index: 30;
+  min-width: 8.5rem;
+  padding: 0.4rem 0.55rem;
+  background: rgb(var(--c-card));
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 0.45rem;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.22);
+  font-size: 11px;
+  line-height: 1.45;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.chart-tip.hidden { display: none; }
+.chart-tip-date { font-weight: 700; margin-bottom: 0.15rem; }
+.chart-tip-row { display: flex; align-items: center; gap: 0.4rem; }
+.chart-tip-row .dot { height: 0.4rem; width: 0.4rem; border-radius: 9999px; flex: none; }
+.chart-tip-row .val { margin-left: auto; font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Yakınlaştırmayı sıfırlama düğmesi — satır yüksekliğini büyütmemeli (tek ekran düzeni) */
+.chart-reset {
+  border: 1px solid rgb(var(--c-line));
+  border-radius: 0.3rem;
+  padding: 0 0.35rem;
+  line-height: 1.35;
+  font-weight: 600;
+  color: rgb(var(--c-ink-soft));
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+}
+.chart-reset:hover { color: rgb(var(--c-ink)); border-color: rgb(var(--c-ink)); }
+.chart-reset.hidden { display: none; }
+
 /* ---------- "Daha fazla" açılır bölümü ---------- */
 .more-toggle {
   display: inline-flex;

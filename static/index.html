@@ -42,8 +42,11 @@
   <link rel="stylesheet" href="/styles.css" />
 </head>
 
-<body class="bg-paper font-sans text-ink md:h-screen md:overflow-hidden">
-  <main class="mx-auto flex min-h-screen max-w-5xl flex-col justify-center gap-4 px-5 py-5">
+<body class="bg-paper font-sans text-ink">
+  <!-- Varsayılan hâlde her şey tek ekrana sığar. "Diğer varlıklar" açılınca içerik
+       uzayabildiği için sayfa kaydırılabilir kalmalı; safe center, içerik ekrandan
+       uzun olduğunda flex ortalamanın üst kısmı kırpmasını önler. -->
+  <main class="mx-auto flex min-h-screen max-w-5xl flex-col justify-center gap-4 px-5 py-5 md:[justify-content:safe_center]">
 
     <!-- Masthead -->
     <header>
@@ -172,13 +175,22 @@
             · endeks <span id="resultIndices" class="font-600 text-ink">—</span>
           </p>
 
-          <!-- Zaman serisi grafiği -->
+          <!-- Zaman serisi grafiği — fareyle gezinince değer balonu, sürükleyince aralık seçimi -->
           <div class="mt-3">
             <div id="chartLegend" class="flex flex-wrap gap-x-3 gap-y-1 text-[11px]"></div>
-            <div id="chart" class="mt-1"></div>
-            <div class="mt-0.5 flex justify-between text-[10px] text-ink-soft">
+            <div id="chartBox" class="chart-box mt-1">
+              <div id="chart"></div>
+              <div id="chartBand" class="chart-band hidden"></div>
+              <div id="chartCursor" class="chart-cursor hidden"></div>
+              <div id="chartDots" class="chart-dots"></div>
+              <div id="chartTip" class="chart-tip hidden" role="tooltip"></div>
+            </div>
+            <div class="mt-0.5 flex items-center justify-between gap-2 text-[10px] text-ink-soft">
               <span id="chartStart"></span>
-              <span id="chartScaleNote" class="hidden opacity-70">logaritmik ölçek</span>
+              <span class="flex items-center gap-2">
+                <span id="chartScaleNote" class="hidden opacity-70">logaritmik ölçek</span>
+                <button id="chartReset" type="button" class="chart-reset hidden">↺ tüm dönem</button>
+              </span>
               <span id="chartEnd"></span>
             </div>
           </div>
