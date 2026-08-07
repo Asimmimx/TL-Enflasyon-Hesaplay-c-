@@ -20,7 +20,7 @@ hassasiyetindedir ve yıl normalizasyonu bu sapmayı yıl sonunda sıfırlar.
 Veriyi güncellemek için: ENAG yeni ayı açıkladığında ENAG_MONTHLY_RATES'e ekleyin
 (örn. "2026-07": 2.4) ve yıl kapanınca ENAG_ANNUAL_OFFICIAL çapasını girin.
 
-Son güncelleme: Ağustos 2026 (ENAG Haziran 2026 verisine kadar).
+Son güncelleme: 7 Ağustos 2026 (ENAG Temmuz 2026 verisine kadar).
 """
 
 from __future__ import annotations
@@ -55,7 +55,7 @@ ENAG_MONTHLY_RATES: dict[str, float] = {
     "2025-09": 3.79, "2025-10": 3.74, "2025-11": 2.13, "2025-12": 2.11,
     # 2026 — ENAG duyuruları (yıl kapanmadığı için çapasız → "doğrulanmamış").
     "2026-01": 6.32, "2026-02": 4.01, "2026-03": 4.10, "2026-04": 5.07,
-    "2026-05": 2.16, "2026-06": 1.94,
+    "2026-05": 2.16, "2026-06": 1.94, "2026-07": 3.07,
 }
 
 # ENAG'ın geniş kabul gören yıl sonu (12 aylık) enflasyon oranları (%).
